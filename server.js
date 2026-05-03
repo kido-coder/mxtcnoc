@@ -31,13 +31,15 @@ const HTTP_PORT = parseInt(process.env.HTTP_PORT) || 3000;
 // ── MySQL pool ────────────────────────────────────────────────
 const db = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
+  user: process.env.DB_USER || "sictnoc",
   password: process.env.DB_PASS || "Mhtsshataasai123!@$",
   database: process.env.DB_NAME || "solarmonitor",
   waitForConnections: true,
   connectionLimit: 10,
   timezone: "+00:00",
 });
+
+app.use(express.static('.'));
 
 // ── Logger ────────────────────────────────────────────────────
 const LOG_FILE = path.join(__dirname, "pv_server.log");
