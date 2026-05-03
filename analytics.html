@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MXTC NOC — Analytics</title>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --surface: #0b1326;
+      --surface-dim: #080f1e;
+      --surface-container-lowest: #060e20;
+      --surface-container-low: #131b2e;
+      --surface-container: #171f33;
+      --surface-container-high: #222a3d;
+      --surface-container-highest: #2d3449;
+      --surface-bright: #31394d;
+      --primary: #e9c400;
+      --primary-dim: #b29600;
+      --primary-container: #3a2f00;
+      --on-primary: #221b00;
+      --secondary: #bdc2ff;
+      --secondary-container: #343d96;
+      --on-surface: #dae2fd;
+      --on-surface-variant: #c6c5d4;
+      --outline-variant: #454652;
+      --error: #ffb4ab;
+      --error-container: #93000a;
+      --warning: #ffb59d;
+      --success: #79d198;
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius-sm: 0.25rem;
+      --radius-md: 0.375rem;
+      --radius-lg: 0.75rem;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--surface);
+      color: var(--on-surface);
+      font-family: var(--font-display);
+      font-size: 14px;
+    }
+
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface-container-highest); border-radius: 10px; }
+
+    .icon {
+      font-family: 'Material Symbols Outlined';
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px;
+      line-height: 1;
+      user-select: none;
+    }
+    .icon.filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
+
+    /* ── App shell ── */
+    .app-shell {
+      display: grid;
+      grid-template-rows: 52px 1fr;
+      height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface-container-lowest);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
+      gap: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .brand-icon { color: var(--primary); font-size: 22px; }
+    .brand-name { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--primary); }
+    .brand-sep { width: 1px; height: 20px; background: var(--outline-variant); }
+    .brand-sub { font-size: 0.65rem; color: var(--on-surface-variant); letter-spacing: 0.1em; text-transform: uppercase; }
+
+    nav { display: flex; gap: 2px; }
+    .nav-link {
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: var(--radius-sm);
+      color: var(--on-surface-variant); text-decoration: none;
+      transition: all 0.15s; cursor: pointer;
+    }
+    .nav-link.active { color: var(--primary); background: rgba(233, 196, 0, 0.08); }
+    .nav-link:hover:not(.active) { color: var(--on-surface); background: var(--surface-container); }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+
+    .icon-btn {
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      border: none; background: transparent; cursor: pointer;
+      color: var(--on-surface-variant); border-radius: var(--radius-sm); transition: all 0.15s;
+    }
+    .icon-btn:hover { color: var(--primary); background: rgba(233, 196, 0, 0.08); }
+
+    .conn-status {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.6rem; font-family: var(--font-mono);
+      color: var(--on-surface-variant); padding: 3px 8px;
+      background: var(--surface-container); border-radius: var(--radius-sm);
+    }
+    .conn-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .conn-dot.ok { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .conn-dot.err { background: var(--error); box-shadow: 0 0 6px var(--error); }
+
+    /* ── Body grid ── */
+    .body-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      overflow: hidden;
+      height: 100%;
+    }
+
+    /* ── Charts Panel ── */
+    .charts-panel {
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      background: var(--surface-dim);
+      gap: 1px;
+    }
+
+    .charts-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: rgba(198, 197, 212, 0.25);
+    }
+    .charts-empty .icon { font-size: 48px; }
+    .charts-empty p { font-size: 0.8rem; text-align: center; max-width: 260px; line-height: 1.6; }
+
+    .chart-card {
+      background: var(--surface-container-low);
+      flex-shrink: 0;
+      padding: 16px 20px;
+    }
+
+    .chart-title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .chart-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+    }
+    .chart-title .icon { font-size: 14px; }
+
+    .chart-stats {
+      display: flex;
+      gap: 16px;
+    }
+
+    .chart-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+    .chart-stat-label { font-size: 0.52rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(198, 197, 212, 0.4); }
+    .chart-stat-value { font-size: 0.85rem; font-family: var(--font-mono); font-weight: 600; }
+
+    .chart-canvas-wrap {
+      height: 180px;
+      position: relative;
+    }
+
+    /* ── Hourly data table ── */
+    .hourly-table-card {
+      background: var(--surface-container-low);
+      flex-shrink: 0;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+    }
+    .section-title .icon { font-size: 14px; color: var(--primary); }
+
+    .table-wrap { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      position: sticky; top: 0;
+      background: var(--surface-container);
+      font-size: 0.58rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(198, 197, 212, 0.5); padding: 7px 12px; text-align: left; white-space: nowrap; z-index: 10;
+    }
+    tbody tr { transition: background 0.1s; }
+    tbody tr:nth-child(odd)  { background: rgba(23, 31, 51, 0.4); }
+    tbody tr:nth-child(even) { background: rgba(19, 27, 46, 0.4); }
+    tbody tr:hover { background: var(--surface-container-highest); }
+    td { padding: 6px 12px; font-size: 0.72rem; color: var(--on-surface-variant); white-space: nowrap; font-family: var(--font-mono); }
+    td.v { color: var(--on-surface); }
+    td.primary { color: var(--primary); }
+    td.secondary { color: var(--secondary); }
+    td.success { color: var(--success); }
+
+    .hour-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 20px;
+      background: var(--surface-container-high);
+      border-radius: 3px;
+      font-size: 0.68rem; font-weight: 700;
+      color: var(--on-surface-variant);
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--surface-container-lowest);
+      border-left: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 14px 14px 10px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .sidebar-title {
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--on-surface-variant); margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .node-search {
+      display: flex; align-items: center; gap: 5px;
+      background: var(--surface-container); border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm); padding: 5px 8px; width: 100%;
+    }
+    .node-search input {
+      background: transparent; border: none; outline: none;
+      color: var(--on-surface); font-family: var(--font-display); font-size: 0.7rem; width: 100%;
+    }
+    .node-search input::placeholder { color: rgba(198, 197, 212, 0.3); }
+    .node-search .icon { font-size: 14px; color: rgba(198, 197, 212, 0.3); }
+
+    .node-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .node-card {
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.18s;
+      border: 1px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    .node-card::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      border-radius: 2px 0 0 2px; background: transparent; transition: background 0.18s;
+    }
+    .node-card:hover { background: var(--surface-container); }
+    .node-card.active { background: var(--surface-container-high); border-color: rgba(233, 196, 0, 0.15); }
+    .node-card.active::before { background: var(--primary); }
+
+    .node-id { font-size: 0.58rem; font-family: var(--font-mono); font-weight: 600; letter-spacing: 0.08em; margin-bottom: 3px; color: var(--primary); }
+    .node-name { font-size: 0.72rem; font-weight: 600; color: var(--on-surface); margin-bottom: 0; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── Date picker section ── */
+    .date-section {
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      flex-shrink: 0;
+    }
+    .date-section-title {
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--on-surface-variant); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .date-section-title .icon { font-size: 13px; color: var(--primary); }
+
+    .date-row { display: flex; gap: 6px; align-items: center; }
+    .date-input {
+      flex: 1;
+      background: var(--surface-container);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius-sm);
+      color: var(--on-surface);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 6px 8px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .date-input:focus { border-color: rgba(233, 196, 0, 0.4); }
+    .date-input::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+
+    .btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: var(--radius-md);
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; border: none; transition: all 0.15s; font-family: var(--font-display);
+    }
+    .btn-primary { background: var(--primary); color: var(--on-primary); }
+    .btn-primary:hover { background: #f5d400; box-shadow: 0 0 16px rgba(233, 196, 0, 0.3); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Summary stats ── */
+    .stats-section {
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stats-section-title {
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--on-surface-variant); margin-bottom: 2px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .stats-section-title .icon { font-size: 13px; color: var(--primary); }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 6px 8px;
+      background: var(--surface-container);
+      border-radius: var(--radius-sm);
+    }
+    .stat-row-label { font-size: 0.6rem; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.08em; }
+    .stat-row-value { font-size: 0.82rem; font-family: var(--font-mono); font-weight: 600; }
+    .stat-row-value.v-primary { color: var(--primary); }
+    .stat-row-value.v-secondary { color: var(--secondary); }
+    .stat-row-value.v-success { color: var(--success); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: var(--surface-container-high); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md); padding: 10px 14px;
+      font-size: 0.72rem; color: var(--on-surface); z-index: 2000;
+      display: flex; align-items: center; gap: 8px;
+      transform: translateY(60px); opacity: 0; transition: all 0.25s; max-width: 280px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.info .icon { color: var(--primary); }
+    .toast.error .icon { color: var(--error); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding: 40px 20px; color: rgba(198, 197, 212, 0.3);
+    }
+    .empty-state .icon { font-size: 28px; }
+    .empty-state p { font-size: 0.72rem; text-align: center; }
+
+    /* ── Loading state ── */
+    .loading-overlay {
+      display: none;
+      position: absolute; inset: 0;
+      background: rgba(8, 15, 30, 0.6);
+      backdrop-filter: blur(2px);
+      align-items: center; justify-content: center;
+      z-index: 10;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid rgba(233, 196, 0, 0.15);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .range-legend {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.58rem;
+      color: var(--on-surface-variant);
+    }
+    .legend-dot { width: 8px; height: 3px; border-radius: 2px; }
+    .legend-range { width: 12px; height: 8px; border-radius: 2px; opacity: 0.4; }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- ══ HEADER ══ -->
+    <header>
+      <div class="brand">
+        <span class="icon filled brand-icon">solar_power</span>
+        <span class="brand-name">MXTC NOC</span>
+        <div class="brand-sep"></div>
+        <span class="brand-sub">PV Monitoring System</span>
+      </div>
+
+      <nav>
+        <a class="nav-link" href="dashboard.html">Dashboard</a>
+        <a class="nav-link active" href="analytics.html">Analytics</a>
+        <a class="nav-link" href="commands.html">Commands</a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="conn-status" id="connStatus">
+          <div class="conn-dot" id="connDot"></div>
+          <span id="connLabel">Connecting...</span>
+        </div>
+        <button class="icon-btn" title="Refresh" onclick="loadCharts()"><span class="icon">refresh</span></button>
+      </div>
+    </header>
+
+    <!-- ══ BODY ══ -->
+    <div class="body-grid">
+
+      <!-- Charts panel -->
+      <div class="charts-panel" id="chartsPanel">
+        <div class="charts-empty" id="chartsEmpty">
+          <span class="icon">bar_chart</span>
+          <p>Select a node from the list and choose a date to view hourly analytics.</p>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title">Node Selection</div>
+          <div class="node-search">
+            <span class="icon">search</span>
+            <input type="text" placeholder="Filter nodes..." id="nodeSearch" oninput="filterNodes(this.value)" />
+          </div>
+        </div>
+
+        <div class="node-list" id="nodeList">
+          <div class="empty-state"><span class="icon">hourglass_empty</span><p>Loading nodes...</p></div>
+        </div>
+
+        <!-- Date picker -->
+        <div class="date-section">
+          <div class="date-section-title">
+            <span class="icon">calendar_today</span>
+            Date
+          </div>
+          <div class="date-row">
+            <input type="date" class="date-input" id="datePicker" />
+            <button class="btn btn-primary" id="loadBtn" onclick="loadCharts()" disabled>
+              <span class="icon" style="font-size:14px">insights</span>
+              Load
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary stats -->
+        <div class="stats-section" id="statsSection" style="display:none">
+          <div class="stats-section-title">
+            <span class="icon">query_stats</span>
+            Day Summary
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Total Readings</span>
+            <span class="stat-row-value" id="statReadings">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Peak Voltage</span>
+            <span class="stat-row-value v-primary" id="statPeakV">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Peak Current</span>
+            <span class="stat-row-value v-secondary" id="statPeakA">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Avg Battery V</span>
+            <span class="stat-row-value v-success" id="statAvgBat">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Cleaning Events</span>
+            <span class="stat-row-value" id="statClean">—</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-row-label">Active Hours</span>
+            <span class="stat-row-value" id="statHours">—</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span class="icon" id="toastIcon">info</span>
+    <span id="toastMsg">—</span>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+
+    let nodes = [];
+    let selectedNode = null;
+    let analyticsData = [];
+    let charts = {};
+
+    // ── Init ──────────────────────────────────────────────────
+    (async function init() {
+      // Set date to today
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('datePicker').value = today;
+      document.getElementById('datePicker').max = today;
+
+      await fetchNodes();
+      checkConn();
+    })();
+
+    async function fetchNodes() {
+      try {
+        const res = await fetch(`${API_BASE}/nodes`);
+        if (!res.ok) throw new Error(res.statusText);
+        nodes = await res.json();
+        setConn(true);
+      } catch (e) {
+        setConn(false);
+        nodes = getDemoNodes();
+      }
+      renderNodeList('');
+    }
+
+    function getDemoNodes() {
+      return [
+        { node_id: '11-03-1-2-01', node_name: 'ULN_BZD_22hor_HolbooniiSurguuli'      },
+        { node_id: '11-03-1-2-02', node_name: 'ULN_BZD_22hor_ZorigooBagshiinBair'    },
+        { node_id: '11-03-1-2-03', node_name: 'ULN_KHU_32hor_ZaisanDenj'             },
+        { node_id: '11-03-1-2-04', node_name: 'ULN_SGK_14hor_OrgiilKhoroolol'        },
+        { node_id: '11-03-1-2-05', node_name: 'ULN_BZR_20hor_NarantuulZakh'          },
+        { node_id: '11-03-1-2-06', node_name: 'ULN_CHG_5hor_GandanHiidiin_Oroon'     },
+        { node_id: '11-03-1-2-07', node_name: 'ULN_BYG_11hor_AmgalanTosghon'         },
+        { node_id: '11-03-1-2-08', node_name: 'ULN_NLH_1hor_NalaihTosghon'           },
+        { node_id: '11-03-1-2-09', node_name: 'ULN_BZR_26hor_GachuurtTosgon'         },
+        { node_id: '11-03-1-2-10', node_name: 'ULN_SGK_23hor_UuliinkhaanKhoroolol'   },
+        { node_id: '11-03-1-2-11', node_name: 'ULN_KHU_38hor_NisehBuudaliin_Oroon'   },
+        { node_id: '11-03-1-2-12', node_name: 'ULN_BZR_29hor_DunjingaravTal'         },
+      ];
+    }
+
+    // Full-day hourly analytics demo for node 11-03-1-2-01
+    // Simulates a clear sunny day in Ulaanbaatar (Vmp=18.92 V, Imp=5.81 A)
+    function getDemoAnalytics() {
+      // [hour, count, avgV, minV, maxV, avgA, minA, maxA, avgBat, minBat, maxBat, cleaning]
+      const rows = [
+        [ 0,  6,  0.05,  0.03,  0.07,  0.000,  0.000,  0.000,  12.82, 12.80, 12.84,  0],
+        [ 1,  6,  0.04,  0.02,  0.06,  0.000,  0.000,  0.000,  12.78, 12.76, 12.80,  0],
+        [ 2,  6,  0.03,  0.02,  0.05,  0.000,  0.000,  0.000,  12.74, 12.72, 12.76,  0],
+        [ 3,  6,  0.03,  0.02,  0.04,  0.000,  0.000,  0.000,  12.71, 12.70, 12.73,  0],
+        [ 4,  6,  0.04,  0.02,  0.06,  0.000,  0.000,  0.000,  12.68, 12.67, 12.70,  0],
+        [ 5,  6,  0.52,  0.12,  0.98,  0.008,  0.001,  0.015,  12.67, 12.66, 12.68,  0],
+        [ 6,  6,  8.24,  6.80, 10.10,  1.820,  1.500,  2.240,  12.73, 12.68, 12.80,  0],
+        [ 7,  6, 13.52, 11.90, 15.20,  3.210,  2.820,  3.680,  12.92, 12.82, 13.05,  0],
+        [ 8,  8, 15.78, 14.50, 16.90,  4.120,  3.800,  4.490,  13.18, 13.08, 13.30,  4],  // scheduled clean
+        [ 9,  6, 17.24, 16.80, 17.80,  4.820,  4.700,  4.960,  13.52, 13.42, 13.62,  0],
+        [10,  6, 18.50, 18.10, 18.85,  5.280,  5.150,  5.420,  13.78, 13.68, 13.88,  0],
+        [11,  6, 19.08, 18.82, 19.34,  5.580,  5.490,  5.660,  13.98, 13.90, 14.06,  0],
+        [12,  6, 18.92, 18.68, 19.15,  5.700,  5.610,  5.780,  14.08, 14.02, 14.14,  0],
+        [13,  6, 18.80, 18.54, 19.05,  5.510,  5.420,  5.590,  14.10, 14.06, 14.14,  0],
+        [14,  6, 18.38, 18.05, 18.68,  5.210,  5.100,  5.320,  14.10, 14.08, 14.12,  0],
+        [15,  6, 17.52, 17.10, 17.90,  4.820,  4.700,  4.950,  14.08, 14.04, 14.12,  0],
+        [16,  6, 16.18, 15.60, 16.80,  4.230,  4.050,  4.420,  14.05, 14.00, 14.10,  0],
+        [17,  8, 13.82, 12.40, 15.20,  3.490,  2.850,  3.880,  14.00, 13.92, 14.06,  3],  // scheduled clean
+        [18,  6,  9.48,  7.90, 11.20,  2.120,  1.750,  2.520,  13.95, 13.88, 14.00,  0],
+        [19,  6,  4.22,  2.80,  5.90,  0.820,  0.520,  1.150,  13.88, 13.82, 13.94,  0],
+        [20,  6,  0.12,  0.05,  0.22,  0.002,  0.000,  0.005,  13.80, 13.76, 13.84,  0],
+        [21,  6,  0.05,  0.02,  0.08,  0.000,  0.000,  0.001,  13.72, 13.68, 13.76,  0],
+        [22,  6,  0.04,  0.02,  0.06,  0.000,  0.000,  0.000,  13.65, 13.61, 13.69,  0],
+        [23,  6,  0.03,  0.02,  0.05,  0.000,  0.000,  0.000,  13.58, 13.55, 13.62,  0],
+      ];
+      return rows.map(r => ({
+        hour:           r[0],
+        count:          r[1],
+        avg_voltage:    r[2],  min_voltage:    r[3],  max_voltage:    r[4],
+        avg_current:    r[5],  min_current:    r[6],  max_current:    r[7],
+        avg_battery:    r[8],  min_battery:    r[9],  max_battery:    r[10],
+        cleaning_events: r[11],
+      }));
+    }
+
+    async function checkConn() {
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        setConn(res.ok);
+      } catch { setConn(false); }
+    }
+
+    function setConn(ok) {
+      document.getElementById('connDot').className = 'conn-dot ' + (ok ? 'ok' : 'err');
+      document.getElementById('connLabel').textContent = ok ? 'Connected' : 'Offline';
+    }
+
+    // ── Node list ─────────────────────────────────────────────
+    function renderNodeList(filter) {
+      const list = document.getElementById('nodeList');
+      const q = filter.toLowerCase();
+      const visible = nodes.filter(n =>
+        n.node_id.toLowerCase().includes(q) || n.node_name.toLowerCase().includes(q)
+      );
+
+      if (!visible.length) {
+        list.innerHTML = `<div class="empty-state"><span class="icon">search_off</span><p>No nodes match</p></div>`;
+        return;
+      }
+
+      list.innerHTML = visible.map(n => `
+        <div class="node-card ${selectedNode && selectedNode.node_id === n.node_id ? 'active' : ''}"
+             onclick="selectNode('${n.node_id}')">
+          <div class="node-id">${n.node_id}</div>
+          <div class="node-name">${n.node_name}</div>
+        </div>
+      `).join('');
+    }
+
+    function filterNodes(val) {
+      renderNodeList(val);
+    }
+
+    function selectNode(nodeId) {
+      selectedNode = nodes.find(n => n.node_id === nodeId);
+      renderNodeList(document.getElementById('nodeSearch').value);
+      document.getElementById('loadBtn').disabled = false;
+    }
+
+    // ── Load charts ───────────────────────────────────────────
+    async function loadCharts() {
+      if (!selectedNode) { showToast('Select a node first.', 'error'); return; }
+      const date = document.getElementById('datePicker').value;
+      if (!date) { showToast('Select a date.', 'error'); return; }
+
+      const panel = document.getElementById('chartsPanel');
+      panel.innerHTML = `
+        <div style="flex:1;display:flex;align-items:center;justify-content:center">
+          <div class="spinner"></div>
+        </div>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/analytics/${selectedNode.node_id}?date=${date}`);
+        if (!res.ok) throw new Error(res.statusText);
+        analyticsData = await res.json();
+        setConn(true);
+      } catch (e) {
+        setConn(false);
+        // Fall back to demo data for node 01 regardless of which node/date is selected
+        analyticsData = getDemoAnalytics();
+        showToast('Server offline — showing demo data.', 'info');
+      }
+
+      if (!analyticsData.length) {
+        panel.innerHTML = `<div class="charts-empty"><span class="icon">search_off</span><p>No data recorded for <strong>${selectedNode.node_id}</strong> on <strong>${date}</strong>.</p></div>`;
+        document.getElementById('statsSection').style.display = 'none';
+        return;
+      }
+
+      renderCharts(date);
+      renderSummary();
+    }
+
+    // ── Build 24-hour arrays ──────────────────────────────────
+    function buildHourlyArrays(field_min, field_avg, field_max) {
+      const mins = new Array(24).fill(null);
+      const avgs = new Array(24).fill(null);
+      const maxs = new Array(24).fill(null);
+      analyticsData.forEach(row => {
+        const h = row.hour;
+        mins[h] = row[field_min] !== null ? +parseFloat(row[field_min]).toFixed(3) : null;
+        avgs[h] = row[field_avg] !== null ? +parseFloat(row[field_avg]).toFixed(3) : null;
+        maxs[h] = row[field_max] !== null ? +parseFloat(row[field_max]).toFixed(3) : null;
+      });
+      return { mins, avgs, maxs };
+    }
+
+    function buildChart(canvasId, label, unit, colorHex, colorRgb, mins, avgs, maxs) {
+      // Destroy existing
+      if (charts[canvasId]) { charts[canvasId].destroy(); }
+
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      charts[canvasId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`),
+          datasets: [
+            {
+              label: 'Min',
+              data: mins,
+              borderColor: 'transparent',
+              backgroundColor: 'transparent',
+              pointRadius: 0,
+              fill: false,
+              order: 3,
+              spanGaps: false,
+            },
+            {
+              label: 'Range',
+              data: maxs,
+              fill: '-1',
+              backgroundColor: `rgba(${colorRgb}, 0.12)`,
+              borderColor: 'transparent',
+              pointRadius: 0,
+              order: 3,
+              spanGaps: false,
+            },
+            {
+              label: label,
+              data: avgs,
+              borderColor: colorHex,
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              pointRadius: 3,
+              pointHoverRadius: 6,
+              pointBackgroundColor: colorHex,
+              pointBorderColor: 'transparent',
+              tension: 0.35,
+              order: 1,
+              spanGaps: false,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(6, 14, 32, 0.95)',
+              borderColor: 'rgba(255,255,255,0.08)',
+              borderWidth: 1,
+              titleColor: '#c6c5d4',
+              bodyColor: '#dae2fd',
+              padding: 10,
+              callbacks: {
+                title: (items) => items[0].label,
+                label: (item) => {
+                  const h = item.dataIndex;
+                  const row = analyticsData.find(r => r.hour === h);
+                  if (!row) return '';
+                  if (item.dataset.label === 'Min' || item.dataset.label === 'Range') return null;
+                  const minV = field => row[field] !== null ? (+parseFloat(row[field]).toFixed(3)) + ' ' + unit : '—';
+                  const mapping = {
+                    'Panel Voltage':  ['min_voltage',  'avg_voltage',  'max_voltage'],
+                    'Panel Current':  ['min_current',  'avg_current',  'max_current'],
+                    'Battery Voltage':['min_battery',  'avg_battery',  'max_battery'],
+                  };
+                  const [mn, av, mx] = mapping[item.dataset.label] || [];
+                  return [
+                    `Avg: ${row[av] !== null ? (+parseFloat(row[av]).toFixed(3)) + ' ' + unit : '—'}`,
+                    `Min: ${row[mn] !== null ? (+parseFloat(row[mn]).toFixed(3)) + ' ' + unit : '—'}`,
+                    `Max: ${row[mx] !== null ? (+parseFloat(row[mx]).toFixed(3)) + ' ' + unit : '—'}`,
+                    `Readings: ${row.count}`,
+                  ];
+                },
+                filter: (item) => item.dataset.label !== 'Min' && item.dataset.label !== 'Range',
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(69, 70, 82, 0.3)', drawBorder: false },
+              ticks: {
+                color: 'rgba(198, 197, 212, 0.5)',
+                font: { family: "'JetBrains Mono', monospace", size: 10 },
+                maxRotation: 0,
+                callback: (val, idx) => idx % 3 === 0 ? `${String(idx).padStart(2,'0')}h` : '',
+              },
+              border: { display: false },
+            },
+            y: {
+              grid: { color: 'rgba(69, 70, 82, 0.3)', drawBorder: false },
+              ticks: {
+                color: 'rgba(198, 197, 212, 0.5)',
+                font: { family: "'JetBrains Mono', monospace", size: 10 },
+                callback: (v) => v + ' ' + unit,
+              },
+              border: { display: false },
+            },
+          },
+        },
+      });
+    }
+
+    function renderCharts(date) {
+      const panel = document.getElementById('chartsPanel');
+
+      const { mins: vMin, avgs: vAvg, maxs: vMax } = buildHourlyArrays('min_voltage', 'avg_voltage', 'max_voltage');
+      const { mins: aMin, avgs: aAvg, maxs: aMax } = buildHourlyArrays('min_current', 'avg_current', 'max_current');
+      const { mins: bMin, avgs: bAvg, maxs: bMax } = buildHourlyArrays('min_battery', 'avg_battery', 'max_battery');
+
+      const peakV = Math.max(...vMax.filter(v => v !== null));
+      const peakA = Math.max(...aMax.filter(v => v !== null));
+      const avgBat = (() => {
+        const valid = bAvg.filter(v => v !== null);
+        return valid.length ? (valid.reduce((s, v) => s + v, 0) / valid.length).toFixed(2) : null;
+      })();
+
+      panel.innerHTML = `
+        <!-- Panel Voltage -->
+        <div class="chart-card">
+          <div class="chart-title-bar">
+            <div class="chart-title">
+              <span class="icon" style="color:var(--primary)">bolt</span>
+              Panel Voltage
+            </div>
+            <div class="chart-stats">
+              <div class="chart-stat">
+                <span class="chart-stat-label">Peak</span>
+                <span class="chart-stat-value" style="color:var(--primary)">${peakV > 0 ? peakV.toFixed(2) + ' V' : '—'}</span>
+              </div>
+              <div class="range-legend">
+                <div class="legend-item"><div class="legend-range" style="background:var(--primary)"></div> Range</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div> Avg</div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="chartVoltage"></canvas>
+          </div>
+        </div>
+
+        <!-- Panel Current -->
+        <div class="chart-card">
+          <div class="chart-title-bar">
+            <div class="chart-title">
+              <span class="icon" style="color:var(--secondary)">electric_meter</span>
+              Panel Current
+            </div>
+            <div class="chart-stats">
+              <div class="chart-stat">
+                <span class="chart-stat-label">Peak</span>
+                <span class="chart-stat-value" style="color:var(--secondary)">${peakA > 0 ? peakA.toFixed(3) + ' A' : '—'}</span>
+              </div>
+              <div class="range-legend">
+                <div class="legend-item"><div class="legend-range" style="background:var(--secondary)"></div> Range</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--secondary)"></div> Avg</div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="chartCurrent"></canvas>
+          </div>
+        </div>
+
+        <!-- Battery Voltage -->
+        <div class="chart-card">
+          <div class="chart-title-bar">
+            <div class="chart-title">
+              <span class="icon" style="color:var(--success)">battery_charging_full</span>
+              Battery Voltage
+            </div>
+            <div class="chart-stats">
+              <div class="chart-stat">
+                <span class="chart-stat-label">Avg</span>
+                <span class="chart-stat-value" style="color:var(--success)">${avgBat !== null ? avgBat + ' V' : '—'}</span>
+              </div>
+              <div class="range-legend">
+                <div class="legend-item"><div class="legend-range" style="background:var(--success)"></div> Range</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div> Avg</div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="chartBattery"></canvas>
+          </div>
+        </div>
+
+        <!-- Hourly data table -->
+        <div class="hourly-table-card">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="icon">table_rows</span>
+              Hourly Breakdown — ${selectedNode.node_id} &nbsp;/&nbsp; ${date}
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hour</th>
+                  <th>Readings</th>
+                  <th>Volt Avg</th><th>Volt Min</th><th>Volt Max</th>
+                  <th>Curr Avg</th><th>Curr Min</th><th>Curr Max</th>
+                  <th>Bat Avg</th><th>Bat Min</th><th>Bat Max</th>
+                  <th>Cleaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${analyticsData.map(r => `
+                  <tr>
+                    <td><span class="hour-badge">${String(r.hour).padStart(2,'0')}h</span></td>
+                    <td class="v">${r.count}</td>
+                    <td class="primary">${r.avg_voltage !== null ? (+r.avg_voltage).toFixed(2) : '—'}</td>
+                    <td>${r.min_voltage !== null ? (+r.min_voltage).toFixed(2) : '—'}</td>
+                    <td>${r.max_voltage !== null ? (+r.max_voltage).toFixed(2) : '—'}</td>
+                    <td class="secondary">${r.avg_current !== null ? (+r.avg_current).toFixed(3) : '—'}</td>
+                    <td>${r.min_current !== null ? (+r.min_current).toFixed(3) : '—'}</td>
+                    <td>${r.max_current !== null ? (+r.max_current).toFixed(3) : '—'}</td>
+                    <td class="success">${r.avg_battery !== null ? (+r.avg_battery).toFixed(2) : '—'}</td>
+                    <td>${r.min_battery !== null ? (+r.min_battery).toFixed(2) : '—'}</td>
+                    <td>${r.max_battery !== null ? (+r.max_battery).toFixed(2) : '—'}</td>
+                    <td>${r.cleaning_events > 0 ? `<span style="color:var(--warning)">${r.cleaning_events}</span>` : '0'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      // Build charts after DOM insert
+      requestAnimationFrame(() => {
+        buildChart('chartVoltage', 'Panel Voltage', 'V', '#e9c400', '233,196,0', vMin, vAvg, vMax);
+        buildChart('chartCurrent', 'Panel Current', 'A', '#bdc2ff', '189,194,255', aMin, aAvg, aMax);
+        buildChart('chartBattery', 'Battery Voltage', 'V', '#79d198', '121,209,152', bMin, bAvg, bMax);
+      });
+    }
+
+    function renderSummary() {
+      const totalReadings = analyticsData.reduce((s, r) => s + r.count, 0);
+      const allVMax = analyticsData.map(r => r.max_voltage).filter(v => v !== null);
+      const allAMax = analyticsData.map(r => r.max_current).filter(v => v !== null);
+      const allBAvg = analyticsData.map(r => r.avg_battery).filter(v => v !== null);
+      const totalClean = analyticsData.reduce((s, r) => s + (r.cleaning_events || 0), 0);
+
+      document.getElementById('statReadings').textContent = totalReadings;
+      document.getElementById('statPeakV').textContent =
+        allVMax.length ? Math.max(...allVMax).toFixed(2) + ' V' : '—';
+      document.getElementById('statPeakA').textContent =
+        allAMax.length ? Math.max(...allAMax).toFixed(3) + ' A' : '—';
+      document.getElementById('statAvgBat').textContent =
+        allBAvg.length ? (allBAvg.reduce((s, v) => s + +v, 0) / allBAvg.length).toFixed(2) + ' V' : '—';
+      document.getElementById('statClean').textContent = totalClean;
+      document.getElementById('statHours').textContent = analyticsData.length + ' / 24 h';
+
+      document.getElementById('statsSection').style.display = 'flex';
+    }
+
+    // ── Toast ─────────────────────────────────────────────────
+    let toastTimer = null;
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      const icons = { info: 'info', error: 'error', success: 'check_circle' };
+      t.className = `toast ${type}`;
+      document.getElementById('toastIcon').textContent = icons[type] || 'info';
+      document.getElementById('toastMsg').textContent = msg;
+      t.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+</html>

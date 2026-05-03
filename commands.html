@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MXTC NOC — Commands</title>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+
+  <style>
+    :root {
+      --surface: #0b1326;
+      --surface-dim: #080f1e;
+      --surface-container-lowest: #060e20;
+      --surface-container-low: #131b2e;
+      --surface-container: #171f33;
+      --surface-container-high: #222a3d;
+      --surface-container-highest: #2d3449;
+      --surface-bright: #31394d;
+      --primary: #e9c400;
+      --primary-dim: #b29600;
+      --primary-container: #3a2f00;
+      --on-primary: #221b00;
+      --secondary: #bdc2ff;
+      --secondary-container: #343d96;
+      --on-surface: #dae2fd;
+      --on-surface-variant: #c6c5d4;
+      --outline-variant: #454652;
+      --error: #ffb4ab;
+      --error-container: #93000a;
+      --warning: #ffb59d;
+      --success: #79d198;
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius-sm: 0.25rem;
+      --radius-md: 0.375rem;
+      --radius-lg: 0.75rem;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--surface);
+      color: var(--on-surface);
+      font-family: var(--font-display);
+      font-size: 14px;
+    }
+
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--surface-container-highest); border-radius: 10px; }
+
+    .icon {
+      font-family: 'Material Symbols Outlined';
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px;
+      line-height: 1;
+      user-select: none;
+    }
+    .icon.filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
+
+    /* ── App shell ── */
+    .app-shell {
+      display: grid;
+      grid-template-rows: 52px 1fr;
+      height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface-container-lowest);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
+      gap: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .brand-icon { color: var(--primary); font-size: 22px; }
+    .brand-name { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--primary); }
+    .brand-sep { width: 1px; height: 20px; background: var(--outline-variant); }
+    .brand-sub { font-size: 0.65rem; color: var(--on-surface-variant); letter-spacing: 0.1em; text-transform: uppercase; }
+
+    nav { display: flex; gap: 2px; }
+    .nav-link {
+      font-size: 0.65rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: var(--radius-sm);
+      color: var(--on-surface-variant); text-decoration: none;
+      transition: all 0.15s; cursor: pointer;
+    }
+    .nav-link.active { color: var(--primary); background: rgba(233, 196, 0, 0.08); }
+    .nav-link:hover:not(.active) { color: var(--on-surface); background: var(--surface-container); }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+
+    .search-bar {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--surface-container); border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm); padding: 5px 10px;
+    }
+    .search-bar input {
+      background: transparent; border: none; outline: none;
+      color: var(--on-surface); font-family: var(--font-display); font-size: 0.75rem; width: 160px;
+    }
+    .search-bar input::placeholder { color: var(--on-surface-variant); opacity: 0.5; }
+
+    .icon-btn {
+      width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+      border: none; background: transparent; cursor: pointer;
+      color: var(--on-surface-variant); border-radius: var(--radius-sm); transition: all 0.15s;
+    }
+    .icon-btn:hover { color: var(--primary); background: rgba(233, 196, 0, 0.08); }
+
+    .conn-status {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.6rem; font-family: var(--font-mono);
+      color: var(--on-surface-variant); padding: 3px 8px;
+      background: var(--surface-container); border-radius: var(--radius-sm);
+    }
+    .conn-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .conn-dot.ok { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .conn-dot.err { background: var(--error); box-shadow: 0 0 6px var(--error); }
+
+    /* ── Body ── */
+    .commands-body {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+    }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 1px;
+      background: var(--surface-dim);
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .stat-tile {
+      flex: 1;
+      padding: 14px 20px;
+      background: var(--surface-container-low);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .stat-tile-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .stat-tile-icon .icon { font-size: 20px; }
+
+    .stat-tile-icon.yellow { background: rgba(233, 196, 0, 0.1); }
+    .stat-tile-icon.yellow .icon { color: var(--primary); }
+    .stat-tile-icon.blue { background: rgba(189, 194, 255, 0.1); }
+    .stat-tile-icon.blue .icon { color: var(--secondary); }
+    .stat-tile-icon.green { background: rgba(121, 209, 152, 0.1); }
+    .stat-tile-icon.green .icon { color: var(--success); }
+    .stat-tile-icon.red { background: rgba(147, 0, 10, 0.2); }
+    .stat-tile-icon.red .icon { color: var(--error); }
+
+    .stat-tile-info { display: flex; flex-direction: column; gap: 2px; }
+    .stat-tile-label { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-variant); }
+    .stat-tile-value { font-size: 1.3rem; font-family: var(--font-mono); font-weight: 600; line-height: 1; color: var(--on-surface); }
+
+    /* ── Filter row ── */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      background: var(--surface-container-lowest);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      flex-shrink: 0;
+    }
+
+    .filter-label {
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(198, 197, 212, 0.45);
+      flex-shrink: 0;
+    }
+
+    .chip-group { display: flex; gap: 4px; flex-wrap: wrap; }
+
+    .chip {
+      font-size: 0.55rem; font-weight: 600; letter-spacing: 0.1em;
+      padding: 3px 8px; border-radius: var(--radius-sm);
+      background: var(--surface-container); color: var(--on-surface-variant);
+      cursor: pointer; border: 1px solid transparent; transition: all 0.15s;
+      font-family: var(--font-display);
+    }
+    .chip.active { background: rgba(233, 196, 0, 0.1); color: var(--primary); border-color: rgba(233, 196, 0, 0.2); }
+    .chip:hover:not(.active) { background: var(--surface-container-high); color: var(--on-surface); }
+
+    .filter-sep { width: 1px; height: 18px; background: var(--outline-variant); flex-shrink: 0; }
+
+    .date-range {
+      display: flex; align-items: center; gap: 6px; margin-left: auto;
+    }
+    .date-range-label { font-size: 0.58rem; color: var(--on-surface-variant); }
+    .date-range-input {
+      background: var(--surface-container); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius-sm); color: var(--on-surface);
+      font-family: var(--font-mono); font-size: 0.72rem; padding: 4px 8px; outline: none;
+    }
+    .date-range-input:focus { border-color: rgba(233,196,0,0.4); }
+    .date-range-input::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+
+    .btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: var(--radius-sm);
+      font-size: 0.62rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      cursor: pointer; border: none; transition: all 0.15s; font-family: var(--font-display);
+    }
+    .btn-ghost {
+      background: transparent; color: var(--on-surface-variant);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .btn-ghost:hover { background: var(--surface-container-high); color: var(--on-surface); }
+
+    /* ── Table area ── */
+    .table-area {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--surface-dim);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      position: sticky; top: 0;
+      background: var(--surface-container);
+      font-size: 0.58rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(198, 197, 212, 0.5); padding: 8px 16px; text-align: left; white-space: nowrap; z-index: 10;
+    }
+    thead th.sortable { cursor: pointer; user-select: none; }
+    thead th.sortable:hover { color: var(--on-surface); }
+
+    tbody tr { transition: background 0.1s; }
+    tbody tr:nth-child(odd)  { background: rgba(23, 31, 51, 0.5); }
+    tbody tr:nth-child(even) { background: rgba(19, 27, 46, 0.5); }
+    tbody tr:hover { background: var(--surface-container-highest); }
+
+    td {
+      padding: 9px 16px;
+      font-size: 0.72rem; color: var(--on-surface-variant);
+      white-space: nowrap; font-family: var(--font-mono);
+      border-bottom: 1px solid rgba(255,255,255,0.025);
+    }
+    td.v { color: var(--on-surface); }
+    td.muted { color: rgba(198, 197, 212, 0.35); }
+
+    .cmd-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 8px; border-radius: 3px;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+      font-family: var(--font-mono);
+    }
+    .cmd-clean    { background: rgba(233, 196, 0, 0.1);    color: var(--primary); }
+    .cmd-sched    { background: rgba(189, 194, 255, 0.1);  color: var(--secondary); }
+    .cmd-sched-off{ background: rgba(255, 181, 157, 0.1);  color: var(--warning); }
+    .cmd-time     { background: rgba(121, 209, 152, 0.1);  color: var(--success); }
+    .cmd-other    { background: rgba(255,255,255,0.06);    color: var(--on-surface-variant); }
+
+    .cmd-icon { font-size: 13px; }
+
+    .proto-badge {
+      font-size: 0.52rem; font-weight: 700; letter-spacing: 0.1em;
+      padding: 2px 5px; border-radius: 2px;
+    }
+    .proto-mqtt { background: rgba(189,194,255,0.1); color: var(--secondary); }
+    .proto-tcp  { background: rgba(121,209,152,0.1); color: var(--success); }
+    .proto-http { background: rgba(255,255,255,0.06); color: var(--on-surface-variant); }
+
+    .node-id-cell {
+      font-size: 0.65rem; font-family: var(--font-mono); font-weight: 600;
+      color: var(--primary); letter-spacing: 0.06em;
+    }
+
+    .ts-cell { color: rgba(198,197,212,0.55); font-size: 0.68rem; }
+    .ts-date { color: rgba(198,197,212,0.35); font-size: 0.62rem; }
+    .ts-time { color: var(--on-surface-variant); }
+
+    .id-cell { color: rgba(198,197,212,0.3); font-size: 0.65rem; }
+
+    /* ── Empty state ── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; padding: 60px 20px; color: rgba(198, 197, 212, 0.25);
+    }
+    .empty-state .icon { font-size: 40px; }
+    .empty-state p { font-size: 0.75rem; text-align: center; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 20px; right: 20px;
+      background: var(--surface-container-high); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md); padding: 10px 14px;
+      font-size: 0.72rem; color: var(--on-surface); z-index: 2000;
+      display: flex; align-items: center; gap: 8px;
+      transform: translateY(60px); opacity: 0; transition: all 0.25s; max-width: 300px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error .icon { color: var(--error); }
+    .toast.success .icon { color: var(--success); }
+    .toast.info .icon { color: var(--primary); }
+
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(233,196,0,0.2); border-top-color: var(--primary);
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Record count badge */
+    .record-count {
+      font-size: 0.6rem; font-family: var(--font-mono);
+      color: rgba(198,197,212,0.35); margin-left: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- ══ HEADER ══ -->
+    <header>
+      <div class="brand">
+        <span class="icon filled brand-icon">solar_power</span>
+        <span class="brand-name">MXTC NOC</span>
+        <div class="brand-sep"></div>
+        <span class="brand-sub">PV Monitoring System</span>
+      </div>
+
+      <nav>
+        <a class="nav-link" href="dashboard.html">Dashboard</a>
+        <a class="nav-link" href="analytics.html">Analytics</a>
+        <a class="nav-link active" href="commands.html">Commands</a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="search-bar">
+          <span class="icon" style="font-size:14px;color:rgba(198,197,212,0.4)">search</span>
+          <input type="text" placeholder="Search commands..." id="globalSearch"
+                 oninput="applyFilters()" />
+        </div>
+        <div class="conn-status" id="connStatus">
+          <div class="conn-dot" id="connDot"></div>
+          <span id="connLabel">Connecting...</span>
+        </div>
+        <button class="icon-btn" title="Refresh" onclick="loadCmdLog()">
+          <span class="icon">refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ══ BODY ══ -->
+    <div class="commands-body">
+
+      <!-- Stats bar -->
+      <div class="stats-bar">
+        <div class="stat-tile">
+          <div class="stat-tile-icon yellow">
+            <span class="icon filled">terminal</span>
+          </div>
+          <div class="stat-tile-info">
+            <span class="stat-tile-label">Total Commands</span>
+            <span class="stat-tile-value" id="statTotal">—</span>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-icon green">
+            <span class="icon filled">cleaning_services</span>
+          </div>
+          <div class="stat-tile-info">
+            <span class="stat-tile-label">Clean Commands</span>
+            <span class="stat-tile-value" id="statClean">—</span>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-icon blue">
+            <span class="icon filled">schedule</span>
+          </div>
+          <div class="stat-tile-info">
+            <span class="stat-tile-label">Schedule Commands</span>
+            <span class="stat-tile-value" id="statSched">—</span>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-icon yellow">
+            <span class="icon filled">hub</span>
+          </div>
+          <div class="stat-tile-info">
+            <span class="stat-tile-label">Nodes Commanded</span>
+            <span class="stat-tile-value" id="statNodes">—</span>
+          </div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-icon green">
+            <span class="icon filled">today</span>
+          </div>
+          <div class="stat-tile-info">
+            <span class="stat-tile-label">Today</span>
+            <span class="stat-tile-value" id="statToday">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter row -->
+      <div class="filter-row">
+        <span class="filter-label">Node</span>
+        <div class="chip-group" id="nodeChips">
+          <span class="chip active" data-node="all" onclick="selectNodeFilter('all', this)">All</span>
+        </div>
+
+        <div class="filter-sep"></div>
+
+        <span class="filter-label">Command</span>
+        <div class="chip-group">
+          <span class="chip active" data-cmd="all"  onclick="selectCmdFilter('all', this)">All</span>
+          <span class="chip"        data-cmd="CLEAN" onclick="selectCmdFilter('CLEAN', this)">Clean</span>
+          <span class="chip"        data-cmd="SCHED" onclick="selectCmdFilter('SCHED', this)">Schedule</span>
+          <span class="chip"        data-cmd="TIME"  onclick="selectCmdFilter('TIME', this)">Time Sync</span>
+        </div>
+
+        <div class="date-range">
+          <span class="date-range-label" style="font-size:0.58rem;color:var(--on-surface-variant)">From</span>
+          <input type="date" class="date-range-input" id="dateFrom" oninput="applyFilters()" />
+          <span class="date-range-label" style="font-size:0.58rem;color:var(--on-surface-variant)">To</span>
+          <input type="date" class="date-range-input" id="dateTo" oninput="applyFilters()" />
+          <button class="btn btn-ghost" onclick="clearDates()">
+            <span class="icon" style="font-size:13px">clear</span>
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-area">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px">#</th>
+              <th>Sent Time</th>
+              <th>Node ID</th>
+              <th>Node Name</th>
+              <th>Command</th>
+              <th>Type</th>
+              <th style="width:60px; text-align:right">
+                <span class="record-count" id="recordCount"></span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="cmdTableBody">
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <span class="icon">hourglass_empty</span>
+                  <p>Loading command log...</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span class="icon" id="toastIcon">info</span>
+    <span id="toastMsg">—</span>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api';
+
+    let allCmds = [];       // full dataset from API
+    let nodeFilter = 'all';
+    let cmdFilter  = 'all';
+    let nodes = [];
+
+    // ── Init ──────────────────────────────────────────────────
+    (async function init() {
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('dateTo').value = today;
+      document.getElementById('dateTo').max = today;
+
+      await Promise.all([loadCmdLog(), loadNodes()]);
+    })();
+
+    async function loadNodes() {
+      try {
+        const res = await fetch(`${API_BASE}/nodes`);
+        if (!res.ok) throw new Error();
+        nodes = await res.json();
+      } catch {
+        nodes = getDemoNodes();
+      }
+      buildNodeChips();
+    }
+
+    function getDemoNodes() {
+      return [
+        { node_id: '11-03-1-2-01', node_name: 'ULN_BZD_22hor_HolbooniiSurguuli'    },
+        { node_id: '11-03-1-2-02', node_name: 'ULN_BZD_22hor_ZorigooBagshiinBair'  },
+        { node_id: '11-03-1-2-03', node_name: 'ULN_KHU_32hor_ZaisanDenj'           },
+        { node_id: '11-03-1-2-04', node_name: 'ULN_SGK_14hor_OrgiilKhoroolol'      },
+        { node_id: '11-03-1-2-05', node_name: 'ULN_BZR_20hor_NarantuulZakh'        },
+        { node_id: '11-03-1-2-06', node_name: 'ULN_CHG_5hor_GandanHiidiin_Oroon'   },
+        { node_id: '11-03-1-2-07', node_name: 'ULN_BYG_11hor_AmgalanTosghon'       },
+        { node_id: '11-03-1-2-08', node_name: 'ULN_NLH_1hor_NalaihTosghon'         },
+        { node_id: '11-03-1-2-09', node_name: 'ULN_BZR_26hor_GachuurtTosgon'       },
+        { node_id: '11-03-1-2-10', node_name: 'ULN_SGK_23hor_UuliinkhaanKhoroolol' },
+        { node_id: '11-03-1-2-11', node_name: 'ULN_KHU_38hor_NisehBuudaliin_Oroon' },
+        { node_id: '11-03-1-2-12', node_name: 'ULN_BZR_29hor_DunjingaravTal'       },
+      ];
+    }
+
+    function getDemoCmds() {
+      const d = (daysAgo, hh, mm) => {
+        const dt = new Date();
+        dt.setDate(dt.getDate() - daysAgo);
+        dt.setHours(hh, mm, 0, 0);
+        return dt.toISOString().slice(0, 19).replace('T', ' ');
+      };
+      return [
+        { cmd_id:  1, cmd_sent: d(0,  8,  0), cmd_node: '11-03-1-2-01', node_id_str: '11-03-1-2-01', node_name: 'ULN_BZD_22hor_HolbooniiSurguuli',      cmd_text: 'SCHED|08:00|17:00' },
+        { cmd_id:  2, cmd_sent: d(0,  8,  1), cmd_node: '11-03-1-2-01', node_id_str: '11-03-1-2-01', node_name: 'ULN_BZD_22hor_HolbooniiSurguuli',      cmd_text: 'CLEAN'             },
+        { cmd_id:  3, cmd_sent: d(0,  9, 15), cmd_node: '11-03-1-2-03', node_id_str: '11-03-1-2-03', node_name: 'ULN_KHU_32hor_ZaisanDenj',             cmd_text: 'CLEAN'             },
+        { cmd_id:  4, cmd_sent: d(0, 10, 30), cmd_node: '11-03-1-2-06', node_id_str: '11-03-1-2-06', node_name: 'ULN_CHG_5hor_GandanHiidiin_Oroon',     cmd_text: 'SCHED|09:00|18:00' },
+        { cmd_id:  5, cmd_sent: d(0, 17,  0), cmd_node: '11-03-1-2-02', node_id_str: '11-03-1-2-02', node_name: 'ULN_BZD_22hor_ZorigooBagshiinBair',    cmd_text: 'CLEAN'             },
+        { cmd_id:  6, cmd_sent: d(0, 17,  2), cmd_node: '11-03-1-2-05', node_id_str: '11-03-1-2-05', node_name: 'ULN_BZR_20hor_NarantuulZakh',          cmd_text: 'CLEAN'             },
+        { cmd_id:  7, cmd_sent: d(1,  8,  0), cmd_node: '11-03-1-2-01', node_id_str: '11-03-1-2-01', node_name: 'ULN_BZD_22hor_HolbooniiSurguuli',      cmd_text: 'CLEAN'             },
+        { cmd_id:  8, cmd_sent: d(1,  8,  5), cmd_node: '11-03-1-2-04', node_id_str: '11-03-1-2-04', node_name: 'ULN_SGK_14hor_OrgiilKhoroolol',        cmd_text: 'SCHED|08:00|17:00' },
+        { cmd_id:  9, cmd_sent: d(1, 11, 45), cmd_node: '11-03-1-2-07', node_id_str: '11-03-1-2-07', node_name: 'ULN_BYG_11hor_AmgalanTosghon',         cmd_text: 'CLEAN'             },
+        { cmd_id: 10, cmd_sent: d(1, 17,  0), cmd_node: '11-03-1-2-08', node_id_str: '11-03-1-2-08', node_name: 'ULN_NLH_1hor_NalaihTosghon',           cmd_text: 'CLEAN'             },
+        { cmd_id: 11, cmd_sent: d(1, 17,  3), cmd_node: '11-03-1-2-09', node_id_str: '11-03-1-2-09', node_name: 'ULN_BZR_26hor_GachuurtTosgon',         cmd_text: 'SCHED_OFF|1'       },
+        { cmd_id: 12, cmd_sent: d(2,  8,  0), cmd_node: '11-03-1-2-10', node_id_str: '11-03-1-2-10', node_name: 'ULN_SGK_23hor_UuliinkhaanKhoroolol',   cmd_text: 'CLEAN'             },
+        { cmd_id: 13, cmd_sent: d(2,  8,  2), cmd_node: '11-03-1-2-11', node_id_str: '11-03-1-2-11', node_name: 'ULN_KHU_38hor_NisehBuudaliin_Oroon',   cmd_text: 'SCHED|08:30|17:30' },
+        { cmd_id: 14, cmd_sent: d(2, 14, 20), cmd_node: '11-03-1-2-12', node_id_str: '11-03-1-2-12', node_name: 'ULN_BZR_29hor_DunjingaravTal',         cmd_text: 'CLEAN'             },
+        { cmd_id: 15, cmd_sent: d(2, 17,  0), cmd_node: '11-03-1-2-01', node_id_str: '11-03-1-2-01', node_name: 'ULN_BZD_22hor_HolbooniiSurguuli',      cmd_text: 'CLEAN'             },
+        { cmd_id: 16, cmd_sent: d(3,  8,  0), cmd_node: '11-03-1-2-02', node_id_str: '11-03-1-2-02', node_name: 'ULN_BZD_22hor_ZorigooBagshiinBair',    cmd_text: 'CLEAN'             },
+        { cmd_id: 17, cmd_sent: d(3, 10,  0), cmd_node: '11-03-1-2-03', node_id_str: '11-03-1-2-03', node_name: 'ULN_KHU_32hor_ZaisanDenj',             cmd_text: 'SCHED|07:30|16:30' },
+        { cmd_id: 18, cmd_sent: d(3, 17,  0), cmd_node: '11-03-1-2-06', node_id_str: '11-03-1-2-06', node_name: 'ULN_CHG_5hor_GandanHiidiin_Oroon',     cmd_text: 'CLEAN'             },
+        { cmd_id: 19, cmd_sent: d(4,  8,  0), cmd_node: '11-03-1-2-05', node_id_str: '11-03-1-2-05', node_name: 'ULN_BZR_20hor_NarantuulZakh',          cmd_text: 'CLEAN'             },
+        { cmd_id: 20, cmd_sent: d(4, 16, 55), cmd_node: '11-03-1-2-04', node_id_str: '11-03-1-2-04', node_name: 'ULN_SGK_14hor_OrgiilKhoroolol',        cmd_text: 'CLEAN'             },
+      ];
+    }
+
+    function buildNodeChips() {
+      const container = document.getElementById('nodeChips');
+      const existing = `<span class="chip active" data-node="all" onclick="selectNodeFilter('all', this)">All</span>`;
+      const chips = nodes.map(n =>
+        `<span class="chip" data-node="${n.node_id}" onclick="selectNodeFilter('${n.node_id}', this)" title="${n.node_name}">${n.node_id}</span>`
+      ).join('');
+      container.innerHTML = existing + chips;
+    }
+
+    async function loadCmdLog() {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/cmdlog?limit=500`);
+        if (!res.ok) throw new Error(res.statusText);
+        allCmds = await res.json();
+        setConn(true);
+      } catch (e) {
+        setConn(false);
+        allCmds = getDemoCmds();
+        showToast('Server offline — showing demo data.', 'info');
+      }
+      setLoading(false);
+      updateStats();
+      applyFilters();
+    }
+
+    function setLoading(on) {
+      document.getElementById('cmdTableBody').innerHTML = on
+        ? `<tr><td colspan="7"><div class="empty-state"><div class="spinner"></div></div></td></tr>`
+        : '';
+    }
+
+    function setConn(ok) {
+      document.getElementById('connDot').className = 'conn-dot ' + (ok ? 'ok' : 'err');
+      document.getElementById('connLabel').textContent = ok ? 'Connected' : 'Offline';
+    }
+
+    // ── Stats ─────────────────────────────────────────────────
+    function updateStats() {
+      const today = new Date().toISOString().slice(0, 10);
+      const cleanCount = allCmds.filter(c => (c.cmd_text || '').startsWith('CLEAN')).length;
+      const schedCount = allCmds.filter(c => (c.cmd_text || '').startsWith('SCHED')).length;
+      const nodeSet = new Set(allCmds.map(c => c.cmd_node));
+      const todayCount = allCmds.filter(c => c.cmd_sent && c.cmd_sent.slice(0, 10) === today).length;
+
+      document.getElementById('statTotal').textContent  = allCmds.length;
+      document.getElementById('statClean').textContent  = cleanCount;
+      document.getElementById('statSched').textContent  = schedCount;
+      document.getElementById('statNodes').textContent  = nodeSet.size;
+      document.getElementById('statToday').textContent  = todayCount;
+    }
+
+    // ── Filters ───────────────────────────────────────────────
+    function selectNodeFilter(val, el) {
+      nodeFilter = val;
+      document.querySelectorAll('#nodeChips .chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      applyFilters();
+    }
+
+    function selectCmdFilter(val, el) {
+      cmdFilter = val;
+      document.querySelectorAll('[data-cmd]').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      applyFilters();
+    }
+
+    function clearDates() {
+      document.getElementById('dateFrom').value = '';
+      document.getElementById('dateTo').value = '';
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const search   = document.getElementById('globalSearch').value.toLowerCase();
+      const dateFrom = document.getElementById('dateFrom').value;
+      const dateTo   = document.getElementById('dateTo').value;
+
+      const filtered = allCmds.filter(c => {
+        // Node filter
+        if (nodeFilter !== 'all' && String(c.cmd_node) !== nodeFilter && c.node_id_str !== nodeFilter) return false;
+
+        // Command type filter
+        if (cmdFilter !== 'all') {
+          const txt = (c.cmd_text || '').toUpperCase();
+          if (!txt.startsWith(cmdFilter)) return false;
+        }
+
+        // Date range filter
+        if (dateFrom && c.cmd_sent && c.cmd_sent.slice(0, 10) < dateFrom) return false;
+        if (dateTo   && c.cmd_sent && c.cmd_sent.slice(0, 10) > dateTo)   return false;
+
+        // Search
+        if (search) {
+          const hay = [
+            String(c.cmd_id),
+            String(c.cmd_node),
+            c.node_id_str || '',
+            c.node_name || '',
+            c.cmd_text || '',
+            c.cmd_sent || '',
+          ].join(' ').toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+
+        return true;
+      });
+
+      document.getElementById('recordCount').textContent = `${filtered.length} records`;
+      renderTable(filtered);
+    }
+
+    // ── Render table ──────────────────────────────────────────
+    function cmdBadge(text) {
+      if (!text) return `<span class="cmd-badge cmd-other"><span class="icon cmd-icon">terminal</span>—</span>`;
+      const t = text.toUpperCase();
+      if (t === 'CLEAN' || t.startsWith('CLEAN'))
+        return `<span class="cmd-badge cmd-clean"><span class="icon cmd-icon">cleaning_services</span>${escHtml(text)}</span>`;
+      if (t.startsWith('SCHED_OFF'))
+        return `<span class="cmd-badge cmd-sched-off"><span class="icon cmd-icon">event_busy</span>${escHtml(text)}</span>`;
+      if (t.startsWith('SCHED'))
+        return `<span class="cmd-badge cmd-sched"><span class="icon cmd-icon">schedule</span>${escHtml(text)}</span>`;
+      if (t.startsWith('TIME'))
+        return `<span class="cmd-badge cmd-time"><span class="icon cmd-icon">schedule_send</span>${escHtml(text)}</span>`;
+      return `<span class="cmd-badge cmd-other"><span class="icon cmd-icon">terminal</span>${escHtml(text)}</span>`;
+    }
+
+    function cmdType(text) {
+      if (!text) return '—';
+      const t = text.toUpperCase();
+      if (t === 'CLEAN' || t.startsWith('CLEAN'))      return 'Panel Clean';
+      if (t.startsWith('SCHED_OFF'))                   return 'Schedule Off';
+      if (t.startsWith('SCHED_GET'))                   return 'Schedule Get';
+      if (t.startsWith('SCHED'))                       return 'Schedule Set';
+      if (t.startsWith('TIME'))                        return 'Time Sync';
+      return 'Unknown';
+    }
+
+    function fmtTs(ts) {
+      if (!ts) return '<span class="muted">—</span>';
+      const d = new Date(ts);
+      if (isNaN(d)) return `<span class="ts-cell">${escHtml(ts)}</span>`;
+      const date = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const time = d.toLocaleTimeString('en-GB', { hour12: false });
+      return `<span class="ts-cell"><span class="ts-date">${date}</span> <span class="ts-time">${time}</span></span>`;
+    }
+
+    function escHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById('cmdTableBody');
+
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><span class="icon">search_off</span><p>No commands match the current filters.</p></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows.map((c, i) => {
+        const nodeDisplay = c.node_id_str || String(c.cmd_node);
+        const nodeName = c.node_name
+          ? `<span style="font-size:0.68rem;color:var(--on-surface)">${escHtml(c.node_name)}</span>`
+          : `<span class="muted">—</span>`;
+
+        return `<tr>
+          <td class="id-cell">#${c.cmd_id}</td>
+          <td>${fmtTs(c.cmd_sent)}</td>
+          <td class="node-id-cell">${escHtml(nodeDisplay)}</td>
+          <td>${nodeName}</td>
+          <td>${cmdBadge(c.cmd_text)}</td>
+          <td style="color:var(--on-surface-variant);font-size:0.65rem;font-family:var(--font-display)">${cmdType(c.cmd_text)}</td>
+          <td></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Toast ─────────────────────────────────────────────────
+    let toastTimer = null;
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      const icons = { info: 'info', error: 'error', success: 'check_circle' };
+      t.className = `toast ${type}`;
+      document.getElementById('toastIcon').textContent = icons[type] || 'info';
+      document.getElementById('toastMsg').textContent = msg;
+      t.classList.add('show');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+    }
+  </script>
+</body>
+</html>

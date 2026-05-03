@@ -1,0 +1,2446 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MXTC NOC — PV Monitoring System</title>
+  <link rel="shortcut icon" href="http://library.must.edu.mn/static/assets/image/must_ico.ico" type="image/x-icon">
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+
+  <!-- Leaflet map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════
+   DESIGN TOKENS — Solar Kinetic Framework
+═══════════════════════════════════════════ */
+    :root {
+      --surface: #0b1326;
+      --surface-dim: #080f1e;
+      --surface-container-lowest: #060e20;
+      --surface-container-low: #131b2e;
+      --surface-container: #171f33;
+      --surface-container-high: #222a3d;
+      --surface-container-highest: #2d3449;
+      --surface-bright: #31394d;
+      --primary: #e9c400;
+      --primary-dim: #b29600;
+      --primary-container: #3a2f00;
+      --on-primary: #221b00;
+      --secondary: #bdc2ff;
+      --secondary-container: #343d96;
+      --on-surface: #dae2fd;
+      --on-surface-variant: #c6c5d4;
+      --outline-variant: #454652;
+      --error: #ffb4ab;
+      --error-container: #93000a;
+      --warning: #ffb59d;
+      --warning-container: #5c1800;
+      --success: #79d198;
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius-sm: 0.25rem;
+      --radius-md: 0.375rem;
+      --radius-lg: 0.75rem;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--surface);
+      color: var(--on-surface);
+      font-family: var(--font-display);
+      font-size: 14px;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 3px;
+      height: 3px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--surface-container-highest);
+      border-radius: 10px;
+    }
+
+    /* Icons */
+    .icon {
+      font-family: 'Material Symbols Outlined';
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .icon.filled {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+
+    /* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+    .app-shell {
+      display: grid;
+      grid-template-rows: 52px 1fr;
+      height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface-container-lowest);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand-icon {
+      color: var(--primary);
+      font-size: 22px;
+    }
+
+    .brand-name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--primary);
+    }
+
+    .brand-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--outline-variant);
+    }
+
+    .brand-sub {
+      font-size: 0.65rem;
+      color: var(--on-surface-variant);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    nav {
+      display: flex;
+      gap: 2px;
+    }
+
+    .nav-link {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--on-surface-variant);
+      text-decoration: none;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+
+    .nav-link.active {
+      color: var(--primary);
+      background: rgba(233, 196, 0, 0.08);
+    }
+
+    .nav-link:hover:not(.active) {
+      color: var(--on-surface);
+      background: var(--surface-container);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-container);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm);
+      padding: 5px 10px;
+    }
+
+    .search-bar input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--on-surface);
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      width: 160px;
+    }
+
+    .search-bar input::placeholder {
+      color: var(--on-surface-variant);
+      opacity: 0.5;
+    }
+
+    .live-badge {
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      background: rgba(233, 196, 0, 0.1);
+      color: var(--primary);
+      border: 1px solid rgba(233, 196, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .live-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--primary);
+      animation: pulse-dot 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.7);
+      }
+    }
+
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--on-surface-variant);
+      border-radius: var(--radius-sm);
+      transition: all 0.15s;
+    }
+
+    .icon-btn:hover {
+      color: var(--primary);
+      background: rgba(233, 196, 0, 0.08);
+    }
+
+    .conn-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.6rem;
+      font-family: var(--font-mono);
+      color: var(--on-surface-variant);
+      padding: 3px 8px;
+      background: var(--surface-container);
+      border-radius: var(--radius-sm);
+    }
+
+    .conn-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .conn-dot.ok {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    .conn-dot.err {
+      background: var(--error);
+      box-shadow: 0 0 6px var(--error);
+    }
+
+    /* ── Body ── */
+    .body-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      overflow: hidden;
+      height: 100%;
+    }
+
+    /* ── Left: map + logs ── */
+    .main-panel {
+      display: grid;
+      grid-template-rows: 1fr auto;
+      overflow: hidden;
+      gap: 0;
+    }
+
+    /* ── Map ── */
+    .map-section {
+      position: relative;
+      overflow: hidden;
+      background: var(--surface-container);
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Leaflet dark override */
+    .leaflet-tile {
+      filter: brightness(0.4) saturate(0.3) hue-rotate(180deg);
+    }
+
+    .leaflet-control-zoom a {
+      background: var(--surface-container-high) !important;
+      color: var(--on-surface) !important;
+      border-color: var(--outline-variant) !important;
+    }
+
+    .leaflet-control-attribution {
+      background: rgba(11, 19, 38, 0.7) !important;
+      color: var(--on-surface-variant) !important;
+      font-size: 9px !important;
+    }
+
+    .map-overlay-tl {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .map-stat-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(11, 19, 38, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-size: 0.65rem;
+      color: var(--on-surface-variant);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .map-stat-chip strong {
+      color: var(--primary);
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+    }
+
+    /* ── Logs Section ── */
+    .log-section {
+      background: var(--surface-container-low);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      max-height: 280px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+    }
+
+    .section-title .icon {
+      font-size: 14px;
+      color: var(--primary);
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 4px;
+    }
+
+    .chip {
+      font-size: 0.55rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-container);
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+      font-family: var(--font-display);
+    }
+
+    .chip.active {
+      background: rgba(233, 196, 0, 0.1);
+      color: var(--primary);
+      border-color: rgba(233, 196, 0, 0.2);
+    }
+
+    .chip:hover:not(.active) {
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+    }
+
+    .log-table-wrap {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: var(--surface-container);
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(198, 197, 212, 0.5);
+      padding: 7px 12px;
+      text-align: left;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    tbody tr {
+      transition: background 0.1s;
+      cursor: pointer;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: rgba(23, 31, 51, 0.4);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(19, 27, 46, 0.4);
+    }
+
+    tbody tr:hover {
+      background: var(--surface-container-highest);
+    }
+
+    td {
+      padding: 7px 12px;
+      font-size: 0.72rem;
+      color: var(--on-surface-variant);
+      white-space: nowrap;
+      font-family: var(--font-mono);
+    }
+
+    td.val {
+      color: var(--on-surface);
+    }
+
+    td.val-primary {
+      color: var(--primary);
+    }
+
+    td.val-error {
+      color: var(--error);
+    }
+
+    .status-sliver {
+      width: 3px;
+      height: 18px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--surface-container-lowest);
+      border-left: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 14px 14px 10px;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .sidebar-title {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--on-surface-variant);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .node-search {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface-container);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm);
+      padding: 5px 8px;
+      width: 100%;
+    }
+
+    .node-search input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--on-surface);
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      width: 100%;
+    }
+
+    .node-search input::placeholder {
+      color: rgba(198, 197, 212, 0.3);
+    }
+
+    .node-search .icon {
+      font-size: 14px;
+      color: rgba(198, 197, 212, 0.3);
+    }
+
+    .node-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .node-card {
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.18s;
+      border: 1px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .node-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      border-radius: 2px 0 0 2px;
+      background: transparent;
+      transition: background 0.18s;
+    }
+
+    .node-card:hover {
+      background: var(--surface-container);
+    }
+
+    .node-card.active {
+      background: var(--surface-container-high);
+      border-color: rgba(233, 196, 0, 0.15);
+      box-shadow: 0 0 20px rgba(233, 196, 0, 0.08);
+    }
+
+    .node-card.active::before {
+      background: var(--primary);
+    }
+
+    .node-card.alert {
+      border-color: rgba(255, 180, 171, 0.15);
+    }
+
+    .node-card.alert::before {
+      background: var(--error);
+    }
+
+    .node-card.alert:hover {
+      background: rgba(147, 0, 10, 0.08);
+    }
+
+    .node-id {
+      font-size: 0.58rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      margin-bottom: 3px;
+    }
+
+    .node-id.active-color {
+      color: var(--primary);
+    }
+
+    .node-id.alert-color {
+      color: var(--error);
+    }
+
+    .node-id.default-color {
+      color: rgba(198, 197, 212, 0.5);
+    }
+
+    .node-name {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--on-surface);
+      margin-bottom: 6px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .node-stats {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .node-stat-label {
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(198, 197, 212, 0.4);
+    }
+
+    .node-stat-value {
+      font-size: 1rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .val-primary {
+      color: var(--primary);
+    }
+
+    .val-error {
+      color: var(--error);
+    }
+
+    .val-normal {
+      color: var(--on-surface);
+    }
+
+    .node-badge {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.55rem;
+      padding: 2px 5px;
+      border-radius: 2px;
+      font-weight: 600;
+    }
+
+    .badge-online {
+      background: rgba(121, 209, 152, 0.12);
+      color: var(--success);
+    }
+
+    .badge-alert {
+      background: rgba(147, 0, 10, 0.2);
+      color: var(--error);
+    }
+
+    .badge-idle {
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(198, 197, 212, 0.5);
+    }
+
+    .badge-offline {
+      background: rgba(70, 50, 10, 0.5);
+      color: rgba(255, 180, 60, 0.85);
+      border: 1px solid rgba(255, 160, 40, 0.25);
+    }
+
+    /* ═══════════════════════════════════════════
+   NODE INFO POPUP MODAL
+═══════════════════════════════════════════ */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 14, 32, 0.85);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface-container-low);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: var(--radius-lg);
+      width: 560px;
+      max-width: 95vw;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 32px 64px rgba(6, 14, 32, 0.6), 0 0 0 1px rgba(233, 196, 0, 0.05);
+      transform: translateY(10px);
+      transition: transform 0.2s;
+    }
+
+    .modal-backdrop.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      padding: 20px 22px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      background: var(--surface-container-low);
+      z-index: 2;
+    }
+
+    .modal-node-id {
+      font-size: 0.6rem;
+      font-family: var(--font-mono);
+      color: var(--primary);
+      letter-spacing: 0.12em;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .modal-node-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--on-surface);
+      line-height: 1.2;
+    }
+
+    .modal-close {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-container);
+      border: none;
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .modal-close:hover {
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+    }
+
+    .modal-body {
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .modal-section-title {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(198, 197, 212, 0.4);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-section-title .icon {
+      font-size: 13px;
+      color: var(--primary);
+    }
+
+    .spec-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .spec-item {
+      background: var(--surface-container);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+
+    .spec-label {
+      font-size: 0.58rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(198, 197, 212, 0.4);
+      margin-bottom: 4px;
+    }
+
+    .spec-value {
+      font-size: 0.9rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--on-surface);
+    }
+
+    .spec-value.highlight {
+      color: var(--primary);
+    }
+
+    .coord-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .coord-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface-container);
+      border-radius: var(--radius-sm);
+      padding: 7px 10px;
+      flex: 1;
+    }
+
+    .coord-label {
+      font-size: 0.58rem;
+      color: rgba(198, 197, 212, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .coord-value {
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      color: var(--on-surface);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      padding: 14px 22px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      background: var(--surface-container-low);
+      position: sticky;
+      bottom: 0;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      font-family: var(--font-display);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--on-primary);
+    }
+
+    .btn-primary:hover {
+      background: #f5d400;
+      box-shadow: 0 0 16px rgba(233, 196, 0, 0.3);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--on-surface-variant);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+    }
+
+    .btn-danger {
+      background: rgba(147, 0, 10, 0.2);
+      color: var(--error);
+      border: 1px solid rgba(255, 180, 171, 0.15);
+    }
+
+    .btn-danger:hover {
+      background: rgba(147, 0, 10, 0.35);
+    }
+
+    /* ── Leaflet custom marker ── */
+    .pv-marker {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .pv-marker-core {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #5a6070;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 6px rgba(90, 96, 112, 0.6);
+      position: relative;
+      z-index: 2;
+    }
+
+    .pv-marker-ring1 {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(90, 96, 112, 0.12);
+      top: -7px;
+      left: -7px;
+    }
+
+    .pv-marker-ring2 {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: transparent;
+      top: -15px;
+      left: -15px;
+    }
+
+    /* ── ONLINE — green ── */
+    .pv-marker.online .pv-marker-core {
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success);
+      border-color: rgba(121, 209, 152, 0.7);
+    }
+    .pv-marker.online .pv-marker-ring1 {
+      background: rgba(121, 209, 152, 0.14);
+      animation: ring-pulse 2.2s ease-out infinite;
+    }
+    .pv-marker.online .pv-marker-ring2 {
+      background: rgba(121, 209, 152, 0.05);
+      animation: ring-pulse 2.2s ease-out infinite 0.45s;
+    }
+
+    /* ── ALERT — red ── */
+    .pv-marker.alert .pv-marker-core {
+      background: var(--error);
+      box-shadow: 0 0 12px var(--error);
+      border-color: rgba(255, 180, 171, 0.7);
+    }
+    .pv-marker.alert .pv-marker-ring1 {
+      background: rgba(255, 180, 171, 0.14);
+      animation: ring-pulse 1.4s ease-out infinite;
+    }
+    .pv-marker.alert .pv-marker-ring2 {
+      background: rgba(255, 180, 171, 0.05);
+      animation: ring-pulse 1.4s ease-out infinite 0.35s;
+    }
+
+    /* ── CLEANING — blue ── */
+    .pv-marker.cleaning .pv-marker-core {
+      background: #60a5fa;
+      box-shadow: 0 0 12px #60a5fa;
+      border-color: rgba(96, 165, 250, 0.7);
+    }
+    .pv-marker.cleaning .pv-marker-ring1 {
+      background: rgba(96, 165, 250, 0.15);
+      animation: ring-pulse 1s ease-out infinite;
+    }
+    .pv-marker.cleaning .pv-marker-ring2 {
+      background: rgba(96, 165, 250, 0.06);
+      animation: ring-pulse 1s ease-out infinite 0.25s;
+    }
+
+    /* ── OFFLINE — grey, no pulse ── */
+    .pv-marker.offline .pv-marker-core {
+      background: #4a5060;
+      box-shadow: none;
+      border-color: rgba(255, 255, 255, 0.15);
+      opacity: 0.7;
+    }
+    .pv-marker.offline .pv-marker-ring1,
+    .pv-marker.offline .pv-marker-ring2 {
+      display: none;
+    }
+
+    @keyframes ring-pulse {
+      0%   { transform: scale(0.8); opacity: 0.8; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .pv-marker-label {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      background: rgba(11, 19, 38, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      padding: 3px 7px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--on-surface);
+      font-family: 'JetBrains Mono', monospace;
+      pointer-events: none;
+    }
+
+    /* ── Map legend ── */
+    .map-legend {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      z-index: 500;
+      background: rgba(11, 19, 38, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .legend-title {
+      font-size: 0.52rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(198, 197, 212, 0.4);
+      margin-bottom: 2px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.6rem;
+      color: var(--on-surface-variant);
+      letter-spacing: 0.06em;
+    }
+
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(255,255,255,0.3);
+    }
+    .legend-dot.online   { background: var(--success);   box-shadow: 0 0 5px var(--success); }
+    .legend-dot.alert    { background: var(--error);     box-shadow: 0 0 5px var(--error); }
+    .legend-dot.cleaning { background: #60a5fa;           box-shadow: 0 0 5px #60a5fa; }
+    .legend-dot.offline  { background: #4a5060;           border-color: rgba(255,255,255,0.12); }
+
+    /* ── Toast notification ── */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--surface-container-high);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-size: 0.72rem;
+      color: var(--on-surface);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transform: translateY(60px);
+      opacity: 0;
+      transition: all 0.25s;
+      max-width: 280px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast .icon {
+      font-size: 16px;
+    }
+
+    .toast.success .icon {
+      color: var(--success);
+    }
+
+    .toast.error .icon {
+      color: var(--error);
+    }
+
+    .toast.info .icon {
+      color: var(--primary);
+    }
+
+    /* ── Loading shimmer ── */
+    .shimmer {
+      background: linear-gradient(90deg, var(--surface-container) 25%, var(--surface-container-high) 50%, var(--surface-container) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 3px;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    /* empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 40px 20px;
+      color: rgba(198, 197, 212, 0.3);
+    }
+
+    .empty-state .icon {
+      font-size: 32px;
+    }
+
+    .empty-state p {
+      font-size: 0.72rem;
+      text-align: center;
+    }
+
+    /* ── Schedule Panel ── */
+    .sched-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sched-slot {
+      display: grid;
+      grid-template-columns: 32px 1fr auto auto;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface-container);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+
+    .sched-slot.enabled {
+      border-color: rgba(233, 196, 0, 0.2);
+    }
+
+    .sched-slot-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 3px;
+      background: var(--surface-container-high);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.62rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--on-surface-variant);
+    }
+
+    .sched-slot.enabled .sched-slot-num {
+      background: var(--primary-container);
+      color: var(--primary);
+    }
+
+    .sched-time-input {
+      background: var(--surface-container-high);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: var(--radius-sm);
+      color: var(--on-surface);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 5px 8px;
+      width: 90px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .sched-time-input:focus {
+      border-color: rgba(233, 196, 0, 0.4);
+    }
+
+    .sched-time-input::-webkit-calendar-picker-indicator {
+      filter: invert(0.6);
+      cursor: pointer;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      inset: 0;
+      background: var(--surface-container-highest);
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+
+    .toggle-thumb:before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 3px;
+      bottom: 3px;
+      background: var(--on-surface-variant);
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .toggle-switch input:checked+.toggle-thumb {
+      background: var(--primary-container);
+    }
+
+    .toggle-switch input:checked+.toggle-thumb:before {
+      transform: translateX(16px);
+      background: var(--primary);
+    }
+
+    .sched-save-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+
+    .sched-status {
+      font-size: 0.6rem;
+      font-family: var(--font-mono);
+      color: var(--on-surface-variant);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .sched-status .icon {
+      font-size: 13px;
+    }
+
+    .proto-badge {
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    .proto-mqtt {
+      background: rgba(189, 194, 255, 0.1);
+      color: var(--secondary);
+    }
+
+    .proto-tcp {
+      background: rgba(121, 209, 152, 0.1);
+      color: var(--success);
+    }
+
+    .proto-none {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--on-surface-variant);
+    }
+
+    /* ── Log filter bar ── */
+    .log-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 16px 8px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .log-filter-input {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface-container);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: var(--radius-sm);
+      padding: 4px 8px;
+      transition: border-color 0.15s;
+    }
+    .log-filter-input:focus-within {
+      border-color: rgba(233,196,0,0.3);
+    }
+    .log-filter-input .icon {
+      font-size: 13px;
+      color: rgba(198,197,212,0.35);
+      flex-shrink: 0;
+    }
+    .log-filter-input input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--on-surface);
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      min-width: 0;
+    }
+    .log-filter-input input::placeholder {
+      color: rgba(198,197,212,0.3);
+    }
+    .log-filter-input input[type="datetime-local"] {
+      color-scheme: dark;
+      width: 148px;
+    }
+    .log-filter-sep {
+      font-size: 0.6rem;
+      color: rgba(198,197,212,0.3);
+      flex-shrink: 0;
+    }
+    .log-filter-clear {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: var(--on-surface-variant);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: var(--font-display);
+      white-space: nowrap;
+    }
+    .log-filter-clear:hover {
+      background: var(--surface-container-high);
+      color: var(--on-surface);
+    }
+    .log-filter-active-count {
+      font-size: 0.58rem;
+      font-family: var(--font-mono);
+      color: var(--primary);
+      padding: 2px 6px;
+      background: rgba(233,196,0,0.08);
+      border-radius: 2px;
+      display: none;
+    }
+    .log-filter-active-count.visible { display: inline; }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-shell">
+
+    <!-- ══ HEADER ══ -->
+    <header>
+      <div class="brand">
+        <span class="icon filled brand-icon">solar_power</span>
+        <span class="brand-name">MXTC NOC</span>
+        <div class="brand-sep"></div>
+        <span class="brand-sub">PV Monitoring System</span>
+      </div>
+
+      <nav>
+        <a class="nav-link active" href="dashboard.html">Dashboard</a>
+        <a class="nav-link" href="analytics.html">Analytics</a>
+        <a class="nav-link" href="commands.html">Commands</a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="search-bar">
+          <span class="icon" style="font-size:14px;color:rgba(198,197,212,0.4)">search</span>
+          <input type="text" placeholder="Search nodes..." id="globalSearch" />
+        </div>
+
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          LIVE
+        </div>
+
+        <div class="conn-status" id="connStatus">
+          <div class="conn-dot" id="connDot"></div>
+          <span id="connLabel">Connecting...</span>
+        </div>
+
+        <button class="icon-btn" title="Notifications"><span class="icon">notifications</span></button>
+        <button class="icon-btn" title="Refresh" onclick="refreshAll()"><span class="icon">refresh</span></button>
+      </div>
+    </header>
+
+    <!-- ══ BODY ══ -->
+    <div class="body-grid">
+
+      <!-- Left: Map + Logs -->
+      <div class="main-panel">
+
+        <!-- Map -->
+        <div class="map-section">
+          <div id="map"></div>
+
+          <div class="map-overlay-tl">
+            <div class="map-stat-chip">
+              <span class="icon" style="font-size:13px;color:var(--primary)">hub</span>
+              Total Nodes &nbsp;<strong id="statTotal">—</strong>
+            </div>
+            <div class="map-stat-chip">
+              <span class="icon" style="font-size:13px;color:var(--success)">check_circle</span>
+              Online &nbsp;<strong id="statOnline" style="color:var(--success)">—</strong>
+            </div>
+            <div class="map-stat-chip">
+              <span class="icon" style="font-size:13px;color:#60a5fa">water_drop</span>
+              Cleaning &nbsp;<strong id="statCleaning" style="color:#60a5fa">—</strong>
+            </div>
+            <div class="map-stat-chip">
+              <span class="icon" style="font-size:13px;color:var(--error)">warning</span>
+              Alert &nbsp;<strong id="statAlert" style="color:var(--error)">—</strong>
+            </div>
+            <div class="map-stat-chip">
+              <span class="icon" style="font-size:13px;color:#5a6070">cloud_off</span>
+              Offline &nbsp;<strong id="statOffline" style="color:#8a909e">—</strong>
+            </div>
+          </div>
+
+          <!-- Map legend -->
+          <div class="map-legend">
+            <div class="legend-title">Node Status</div>
+            <div class="legend-row"><div class="legend-dot online"></div>Online</div>
+            <div class="legend-row"><div class="legend-dot cleaning"></div>Cleaning</div>
+            <div class="legend-row"><div class="legend-dot alert"></div>Alert</div>
+            <div class="legend-row"><div class="legend-dot offline"></div>Offline</div>
+          </div>
+        </div>
+
+        <!-- Log Table -->
+        <div class="log-section">
+          <div class="section-header">
+            <div class="section-title">
+              <span class="icon">table_rows</span>
+              Working Log
+              <span style="font-size:0.6rem;font-family:var(--font-mono);color:rgba(198,197,212,0.35);margin-left:4px"
+                id="logCount"></span>
+            </div>
+            <div class="filter-chips">
+              <span class="chip active" onclick="filterLog('all', this)">All</span>
+              <span class="chip" onclick="filterLog('MQTT', this)">MQTT</span>
+              <span class="chip" onclick="filterLog('TCP', this)">TCP/IP</span>
+              <span class="chip" onclick="filterLog('active', this)">Cleaning</span>
+            </div>
+          </div>
+
+          <!-- Time + node filter bar -->
+          <div class="log-filter-bar" id="logFilterBar">
+            <div class="log-filter-input">
+              <span class="icon">manage_search</span>
+              <input type="text" id="logNodeFilter" placeholder="Node ID…" oninput="applyLogFilters()" style="width:100px"/>
+            </div>
+            <div class="log-filter-input">
+              <span class="icon">calendar_today</span>
+              <input type="datetime-local" id="logTimeFrom" onchange="applyLogFilters()" title="From"/>
+            </div>
+            <span class="log-filter-sep">→</span>
+            <div class="log-filter-input">
+              <span class="icon">event</span>
+              <input type="datetime-local" id="logTimeTo" onchange="applyLogFilters()" title="To"/>
+            </div>
+            <button class="log-filter-clear" onclick="clearLogFilters()">
+              <span class="icon" style="font-size:12px">close</span>Clear
+            </button>
+            <span class="log-filter-active-count" id="logFilterCount"></span>
+          </div>
+
+          <div class="log-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:28px"></th>
+                  <th>Node</th>
+                  <th>Sent Time</th>
+                  <th>Inserted</th>
+                  <th>Seq</th>
+                  <th>Panel V</th>
+                  <th>Panel A</th>
+                  <th>Battery V</th>
+                  <th>Lux</th>
+                  <th>Cleaning</th>
+                  <th>Reason</th>
+                  <th>Protocol</th>
+                </tr>
+              </thead>
+              <tbody id="logTableBody">
+                <tr>
+                  <td colspan="12">
+                    <div class="empty-state"><span class="icon">hourglass_empty</span>
+                      <p>Loading logs...</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title">
+            Node Cluster List
+            <span class="live-badge" style="font-size:0.5rem">
+              <div class="live-dot"></div>LIVE
+            </span>
+          </div>
+          <div class="node-search">
+            <span class="icon">search</span>
+            <input type="text" placeholder="Filter nodes..." id="nodeSearch" oninput="filterNodes(this.value)" />
+          </div>
+        </div>
+        <div class="node-list" id="nodeList">
+          <div class="empty-state"><span class="icon">hourglass_empty</span>
+            <p>Loading nodes...</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ══ NODE INFO MODAL ══ -->
+  <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-node-id" id="modalNodeId">—</div>
+          <div class="modal-node-name" id="modalNodeName">—</div>
+        </div>
+        <button class="modal-close" onclick="closeModalDirect()">
+          <span class="icon" style="font-size:16px">Close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Location -->
+        <div>
+          <div class="modal-section-title">
+            <span class="icon">location_on</span>
+            Coordinates
+          </div>
+          <div class="coord-row">
+            <div class="coord-pill">
+              <div>
+                <div class="coord-label">Longitude</div>
+                <div class="coord-value" id="modalLong">—</div>
+              </div>
+            </div>
+            <div class="coord-pill">
+              <div>
+                <div class="coord-label">Latitude</div>
+                <div class="coord-value" id="modalLat">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel Specs -->
+        <div>
+          <div class="modal-section-title">
+            <span class="icon">solar_power</span>
+            Panel Specifications
+          </div>
+          <div class="spec-grid">
+            <div class="spec-item">
+              <div class="spec-label">Isc — Short Circuit Current</div>
+              <div class="spec-value highlight" id="modalIsc">—</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Voc — Open Circuit Voltage</div>
+              <div class="spec-value highlight" id="modalVoc">—</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Imp — Max Power Current</div>
+              <div class="spec-value" id="modalImp">—</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Vmp — Max Power Voltage</div>
+              <div class="spec-value" id="modalVmp">—</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Peak Power (Pmax)</div>
+              <div class="spec-value highlight" id="modalPmax">—</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Fill Factor</div>
+              <div class="spec-value" id="modalFF">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Battery Specs -->
+        <div>
+          <div class="modal-section-title">
+            <span class="icon">battery_charging_full</span>
+            Battery Configuration
+          </div>
+          <div class="spec-grid">
+            <div class="spec-item">
+              <div class="spec-label">Nominal Voltage</div>
+              <div class="spec-value highlight" id="modalBattV">—</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-label">Capacity (Ah)</div>
+              <div class="spec-value highlight" id="modalBattI">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Last Log -->
+        <div>
+          <div class="modal-section-title">
+            <span class="icon">history</span>
+            Last Telemetry
+          </div>
+          <div class="spec-grid" id="modalLastLog">
+            <div class="spec-item" style="grid-column:1/-1">
+              <div class="spec-label">Status</div>
+              <div class="spec-value" style="color:var(--on-surface-variant)">No recent data</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule -->
+        <div>
+          <div class="modal-section-title">
+            <span class="icon">schedule</span>
+            Cleaning Schedule
+            <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
+              <span class="sched-status" id="modalProtoStatus">
+                <span class="icon">wifi</span> — no data yet
+              </span>
+            </span>
+          </div>
+          <div class="sched-panel" id="schedPanel">
+            <!-- Slot 0 -->
+            <div class="sched-slot" id="schedSlot0">
+              <div class="sched-slot-num">1</div>
+              <input type="time" class="sched-time-input" id="schedTime0" value="08:00" />
+              <label class="toggle-switch" title="Enable slot 1">
+                <input type="checkbox" id="schedEna0" onchange="onSchedToggle(0)" />
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <!-- Slot 1 -->
+            <div class="sched-slot" id="schedSlot1">
+              <div class="sched-slot-num">2</div>
+              <input type="time" class="sched-time-input" id="schedTime1" value="17:00" />
+              <label class="toggle-switch" title="Enable slot 2">
+                <input type="checkbox" id="schedEna1" onchange="onSchedToggle(1)" />
+                <span class="toggle-thumb"></span>
+              </label>
+            </div>
+            <div class="sched-save-row">
+              <div class="sched-status" id="schedSaveStatus">
+                <span class="icon">info</span> Saved to EEPROM on Arduino
+              </div>
+              <button class="btn btn-primary" onclick="saveSchedule()" style="padding:7px 14px">
+                <span class="icon" style="font-size:14px">save</span>
+                Save & Send
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="sendCleanCmd()">
+          <span class="icon" style="font-size:15px">cleaning_services</span>
+          Send Clean Command
+        </button>
+        <button class="btn btn-ghost" onclick="viewNodeLogs()">
+          <span class="icon" style="font-size:15px">table_rows</span>
+          View Full Log
+        </button>
+        <button class="btn btn-danger" style="margin-left:auto" onclick="closeModalDirect()">
+          <span class="icon" style="font-size:15px">close</span>
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span class="icon" id="toastIcon">info</span>
+    <span id="toastMsg">—</span>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+     BACKEND CONFIGURATION
+     Replace these with your actual server values
+══════════════════════════════════════════════ -->
+  <script>
+    const API_BASE = 'http://localhost:3000/api';  // ← your Node.js server URL
+    const POLL_INTERVAL_MS = 5000;                  // log polling interval
+
+    // ══════════════════════════════════════════════
+    //  STATE
+    // ══════════════════════════════════════════════
+    let nodes = [];          // node_info rows
+    let logs = [];          // working_log rows (latest)
+    let selectedNode = null;        // currently selected node object
+    let leafletMap = null;
+    let markers = {};          // node_id → leaflet marker layer
+    let logFilter     = 'all';
+    let pollTimer     = null;
+    let logNodeSearch = '';    // node id text search in log table
+    let logTimeFrom   = null;  // Date | null
+    let logTimeTo     = null;  // Date | null
+
+    // ══════════════════════════════════════════════
+    //  MAP INIT
+    // ══════════════════════════════════════════════
+    function initMap() {
+      leafletMap = L.map('map', {
+        center: [47.9, 106.9],
+        zoom: 11,
+        zoomControl: true,
+        attributionControl: true,
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(leafletMap);
+    }
+
+    // Returns 'online' | 'cleaning' | 'alert' | 'offline'
+    function getNodeStatus(node, lastLog) {
+      const OFFLINE_MS = 15 * 60 * 1000; // 15 min
+      if (!lastLog) return 'offline';
+
+      const lastSeen = lastLog.log_inserted_time
+        ? new Date(lastLog.log_inserted_time)
+        : (lastLog.log_sent_time ? new Date(lastLog.log_sent_time) : null);
+
+      if (!lastSeen || isNaN(lastSeen.getTime()) ||
+          (Date.now() - lastSeen.getTime()) > OFFLINE_MS) return 'offline';
+
+      if (parseInt(lastLog.log_cleaning_stat) === 1) return 'cleaning';
+
+      const battV = parseFloat(lastLog.log_battery_voltage);
+      if (!isNaN(battV) && battV < 11.5) return 'alert';
+
+      return 'online';
+    }
+
+    function createMarkerHTML(node, status) {
+      return `<div class="pv-marker ${status}">
+    <div class="pv-marker-ring2"></div>
+    <div class="pv-marker-ring1"></div>
+    <div class="pv-marker-core"></div>
+    <div class="pv-marker-label">${node.node_id}</div>
+  </div>`;
+    }
+
+    function placeMarkers() {
+      Object.values(markers).forEach(m => leafletMap.removeLayer(m));
+      markers = {};
+
+      nodes.forEach(node => {
+        const lat = parseFloat(node.node_lat);
+        const lng = parseFloat(node.node_long);
+        if (isNaN(lat) || isNaN(lng)) return;
+
+        const lastLog = logs.find(l => String(l.log_node) === String(node.node_id));
+        const status  = getNodeStatus(node, lastLog);
+
+        const icon = L.divIcon({
+          className: '',
+          html: createMarkerHTML(node, status),
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+
+        const m = L.marker([lat, lng], { icon }).addTo(leafletMap);
+        m.on('click', () => openModal(node.node_id));
+        markers[node.node_id] = m;
+      });
+    }
+
+    // ══════════════════════════════════════════════
+    //  API CALLS — replace stubs with real fetch()
+    //  Your Node.js server should expose these routes:
+    //    GET  /api/nodes          → node_info[] 
+    //    GET  /api/logs?limit=200 → working_log[]
+    //    GET  /api/logs/:node_id  → working_log[] for one node
+    //    POST /api/cmd            → { node_id } → inserts cmd_log
+    // ══════════════════════════════════════════════
+
+    async function fetchNodes() {
+      try {
+        const res = await fetch(`${API_BASE}/nodes`);
+        if (!res.ok) throw new Error(res.statusText);
+        return await res.json();
+      } catch (e) {
+        console.error('fetchNodes:', e);
+        setConnStatus(false);
+        // ── DEMO FALLBACK (remove in production) ──
+        return getDemoNodes();
+      }
+    }
+
+    async function fetchLogs(nodeId = null) {
+      try {
+        const url = nodeId
+          ? `${API_BASE}/logs/${nodeId}?limit=50`
+          : `${API_BASE}/logs?limit=200`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.statusText);
+        setConnStatus(true);
+        return await res.json();
+      } catch (e) {
+        console.error('fetchLogs:', e);
+        setConnStatus(false);
+        return getDemoLogs();
+      }
+    }
+
+    async function postCleanCommand(nodeId) {
+      try {
+        const res = await fetch(`${API_BASE}/cmd`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ node_id: nodeId }),
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        return true;
+      } catch (e) {
+        console.error('postCleanCommand:', e);
+        return false;
+      }
+    }
+
+    // ══════════════════════════════════════════════
+    //  RENDER
+    // ══════════════════════════════════════════════
+    function renderNodeList(filter = '') {
+      const list = document.getElementById('nodeList');
+      const q = filter.toLowerCase();
+      const visible = nodes.filter(n =>
+        n.node_id.toLowerCase().includes(q) || n.node_name.toLowerCase().includes(q)
+      );
+
+      if (!visible.length) {
+        list.innerHTML = `<div class="empty-state"><span class="icon">search_off</span><p>No nodes match your search</p></div>`;
+        return;
+      }
+
+      list.innerHTML = visible.map(node => {
+        const lastLog = logs.find(l => String(l.log_node) === String(node.node_id));
+        const battV = lastLog ? parseFloat(lastLog.log_battery_voltage) : null;
+        const isAlert = battV !== null && battV < 11.5;
+        const isActive = selectedNode && selectedNode.node_id === node.node_id;
+
+        const stateClass = isActive ? 'active' : (isAlert ? 'alert' : '');
+        const idClass = isActive ? 'active-color' : (isAlert ? 'alert-color' : 'default-color');
+        const valClass = isActive ? 'val-primary' : (isAlert ? 'val-error' : 'val-normal');
+        // Offline = last log > 5 minutes ago
+        const OFFLINE_MS = 5 * 60 * 1000;
+        const lastLogTime = lastLog && lastLog.log_sent_time ? new Date(lastLog.log_sent_time).getTime() : null;
+        const isOffline = lastLogTime === null || (Date.now() - lastLogTime) > OFFLINE_MS;
+
+        const badge = isAlert
+          ? `<span class="node-badge badge-alert"><span class="icon" style="font-size:10px">warning</span>ALERT</span>`
+          : isOffline
+            ? `<span class="node-badge badge-offline"><span class="icon" style="font-size:10px">wifi_off</span>OFFLINE</span>`
+            : `<span class="node-badge badge-online"><span class="icon" style="font-size:10px">check_circle</span>ONLINE</span>`;
+
+        const battDisplay = battV !== null ? battV.toFixed(2) + ' V' : '—';
+
+        return `<div class="node-card ${stateClass}" onclick="selectNode('${node.node_id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+        <div class="node-id ${idClass}">${node.node_id}</div>
+        ${badge}
+      </div>
+      <div class="node-name">${node.node_name}</div>
+      <div class="node-stats">
+        <div class="node-stat-label">Battery</div>
+        <div class="node-stat-value ${valClass}">${battDisplay}</div>
+      </div>
+    </div>`;
+      }).join('');
+
+      // Summary stats
+      const total = nodes.length;
+      const statusCounts = { online: 0, cleaning: 0, alert: 0, offline: 0 };
+      nodes.forEach(n => {
+        const l = logs.find(ll => String(ll.log_node) === String(n.node_id));
+        statusCounts[getNodeStatus(n, l)]++;
+      });
+      document.getElementById('statTotal').textContent    = total;
+      document.getElementById('statOnline').textContent   = statusCounts.online;
+      document.getElementById('statCleaning').textContent = statusCounts.cleaning;
+      document.getElementById('statAlert').textContent    = statusCounts.alert;
+      document.getElementById('statOffline').textContent  = statusCounts.offline;
+    }
+
+    function renderLogTable(data) {
+      const tbody = document.getElementById('logTableBody');
+      let rows = data;
+
+      // Protocol / cleaning chips
+      if (logFilter === 'MQTT')   rows = rows.filter(r => r.log_con_type === 'MQTT');
+      if (logFilter === 'TCP')    rows = rows.filter(r => r.log_con_type === 'TCP' || r.log_con_type === 'TCP/IP');
+      if (logFilter === 'active') rows = rows.filter(r => r.log_cleaning_stat === 1);
+
+      // Node search filter
+      if (logNodeSearch) {
+        const q = logNodeSearch.toLowerCase();
+        rows = rows.filter(r => String(r.log_node).toLowerCase().includes(q));
+      }
+
+      // Time range filter
+      if (logTimeFrom) rows = rows.filter(r => r.log_sent_time && new Date(r.log_sent_time) >= logTimeFrom);
+      if (logTimeTo)   rows = rows.filter(r => r.log_sent_time && new Date(r.log_sent_time) <= logTimeTo);
+
+      // Update filter count badge
+      const countEl = document.getElementById('logFilterCount');
+      const hasFilters = logNodeSearch || logTimeFrom || logTimeTo;
+      if (hasFilters) {
+        countEl.textContent = `${rows.length} filtered`;
+        countEl.classList.add('visible');
+      } else {
+        countEl.classList.remove('visible');
+      }
+
+      document.getElementById('logCount').textContent = `${rows.length} records`;
+
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><span class="icon">inbox</span><p>No records match the current filter</p></div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows.map((r, i) => {
+        const battV = parseFloat(r.log_battery_voltage);
+        const isAlert = !isNaN(battV) && battV < 11.5;
+        const sliverColor = isAlert ? 'var(--error)' : r.log_cleaning_stat ? 'var(--primary)' : 'var(--success)';
+        const battClass = isAlert ? 'val-error' : 'val-primary';
+
+        const panelV = r.log_panel_voltage ? parseFloat(r.log_panel_voltage).toFixed(2) + ' V' : '—';
+        const panelI = r.log_panel_current ? parseFloat(r.log_panel_current).toFixed(3) + ' A' : '—';
+        const battVf = r.log_battery_voltage ? parseFloat(r.log_battery_voltage).toFixed(2) + ' V' : '—';
+        const luxVf = r.log_lux != null ? parseFloat(r.log_lux).toFixed(0) + ' lx' : '—';
+        const clean = r.log_cleaning_stat ? 'Active' : 'Idle';
+        const proto = r.log_con_type || '—';
+
+        const sentTime = r.log_sent_time ? new Date(r.log_sent_time).toLocaleString() : '—';
+        const insTime = r.log_inserted_time ? new Date(r.log_inserted_time).toLocaleString() : '—';
+
+        return `<tr onclick="highlightNode('${r.log_node}')">
+      <td><span class="status-sliver" style="background:${sliverColor}"></span></td>
+      <td class="val">${r.log_node}</td>
+      <td>${sentTime}</td>
+      <td>${insTime}</td>
+      <td class="val">${r.log_seq ?? '—'}</td>
+      <td class="val">${panelV}</td>
+      <td class="val">${panelI}</td>
+      <td class="${battClass}">${battVf}</td>
+      <td class="val">${luxVf}</td>
+      <td class="${r.log_cleaning_stat ? 'val-primary' : ''}">${clean}</td>
+      <td>${r.log_cleaning_reason || '—'}</td>
+      <td><span style="font-size:0.62rem;padding:2px 6px;border-radius:2px;background:rgba(233,196,0,0.08);color:var(--secondary)">${proto}</span></td>
+    </tr>`;
+      }).join('');
+    }
+
+    // ══════════════════════════════════════════════
+    //  MODAL
+    // ══════════════════════════════════════════════
+    async function openModal(nodeId) {
+      const node = nodes.find(n => n.node_id === nodeId);
+      if (!node) return;
+
+      document.getElementById('modalNodeId').textContent = node.node_id;
+      document.getElementById('modalNodeName').textContent = node.node_name;
+
+      // Proto badge
+      const protoEl = document.getElementById('modalProtoStatus');
+      const proto = node.last_proto;
+      const protoClass = proto === 'MQTT' ? 'proto-mqtt' : proto === 'TCP' ? 'proto-tcp' : 'proto-none';
+      const seen = node.last_seen ? new Date(node.last_seen).toLocaleTimeString() : '—';
+      protoEl.innerHTML = proto ? `<span class="proto-badge ${protoClass}">${proto}</span> last seen ${seen}`
+        : `<span class="icon">wifi_off</span> No connection yet`; document.getElementById('modalLong').textContent = node.node_long;
+      document.getElementById('modalLat').textContent = node.node_lat;
+      document.getElementById('modalIsc').textContent = node.panel_isc + ' A';
+      document.getElementById('modalVoc').textContent = node.panel_voc + ' V';
+      document.getElementById('modalImp').textContent = node.panel_imp + ' A';
+      document.getElementById('modalVmp').textContent = node.panel_vmp + ' V';
+
+      const pmax = (node.panel_imp * node.panel_vmp).toFixed(2);
+      const ff = ((node.panel_imp * node.panel_vmp) / (node.panel_isc * node.panel_voc) * 100).toFixed(1);
+      document.getElementById('modalPmax').textContent = pmax + ' W';
+      document.getElementById('modalFF').textContent = ff + ' %';
+      document.getElementById('modalBattV').textContent = node.battery_voltage + ' V';
+      document.getElementById('modalBattI').textContent = node.battery_current + ' Ah';
+
+      // Last telemetry
+      const lastLog = logs.find(l => String(l.log_node) === String(nodeId));
+      const ll = document.getElementById('modalLastLog');
+      if (lastLog) {
+        const battV = parseFloat(lastLog.log_battery_voltage);
+        const isAlert = battV < 11.5;
+        ll.innerHTML = `
+        \<div class="spec-item"\>
+        <div class="spec-label">Sent Time</div>
+        <div class="spec-value">${lastLog.log_sent_time ? new Date(lastLog.log_sent_time).toLocaleString() : '—'}</div>
+      </div >
+      <div class="spec-item">
+        <div class="spec-label">Panel Voltage</div>
+        <div class="spec-value highlight">${lastLog.log_panel_voltage ? parseFloat(lastLog.log_panel_voltage).toFixed(2) + ' V' : '—'}</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Panel Current</div>
+        <div class="spec-value highlight">${lastLog.log_panel_current ? parseFloat(lastLog.log_panel_current).toFixed(3) + ' A' : '—'}</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Battery Voltage</div>
+        <div class="spec-value ${isAlert ? 'val-error' : 'highlight'}">${battV.toFixed(2)} V ${isAlert ? '⚠ LOW' : ''}</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Light (Lux)</div>
+        <div class="spec-value">${lastLog.log_lux != null ? parseFloat(lastLog.log_lux).toFixed(0) + ' lx' : '—'}</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Cleaning Status</div>
+        <div class="spec-value ${lastLog.log_cleaning_stat ? 'highlight' : ''}">${lastLog.log_cleaning_stat ? 'ACTIVE' : 'IDLE'}</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">Protocol</div>
+        <div class="spec-value">${lastLog.log_con_type || '—'}</div>
+      </div>`;
+      } else {
+        ll.innerHTML = `<div class="spec-item" style = "grid-column:1/-1">
+      <div class="spec-label">Status</div>
+      <div class="spec-value" style="color:var(--on-surface-variant)">No telemetry received yet</div>
+    </div > `;
+      }
+
+      // Load schedule for this node
+      loadSchedule(nodeId);
+
+      document.getElementById('modalBackdrop').classList.add('open');
+      selectedNode = node;
+    }
+
+    function closeModal(e) {
+      if (e.target === document.getElementById('modalBackdrop')) closeModalDirect();
+    }
+    function closeModalDirect() {
+      document.getElementById('modalBackdrop').classList.remove('open');
+    }
+
+    async function sendCleanCmd() {
+      if (!selectedNode) return;
+      const ok = await postCleanCommand(selectedNode.node_id);
+      showToast(
+        ok ? 'success' : 'error',
+        ok ? `Clean command sent to ${selectedNode.node_id} ` : 'Failed to send command. Check server connection.',
+        ok ? 'check_circle' : 'error'
+      );
+      if (ok) closeModalDirect();
+    }
+
+    function viewNodeLogs() {
+      closeModalDirect();
+      if (!selectedNode) return;
+      document.getElementById('nodeSearch').value = selectedNode.node_id;
+      filterNodes(selectedNode.node_id);
+      selectNode(selectedNode.node_id);
+    }
+
+    // ══════════════════════════════════════════════
+    //  INTERACTIONS
+    // ══════════════════════════════════════════════
+    function selectNode(nodeId) {
+      selectedNode = nodes.find(n => n.node_id === nodeId) || null;
+      renderNodeList(document.getElementById('nodeSearch').value);
+
+      // Pan map to node
+      if (selectedNode && leafletMap) {
+        const lat = parseFloat(selectedNode.node_lat);
+        const lng = parseFloat(selectedNode.node_long);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          leafletMap.flyTo([lat, lng], 14, { duration: 1 });
+        }
+      }
+
+      // Filter logs to this node
+      if (selectedNode) {
+        renderLogTable(logs.filter(l => String(l.log_node) === String(nodeId)));
+      }
+
+      openModal(nodeId);
+    }
+
+    function highlightNode(nodeId) {
+      selectNode(String(nodeId));
+    }
+
+    function filterNodes(q) {
+      renderNodeList(q);
+    }
+
+    function applyLogFilters() {
+      logNodeSearch = document.getElementById('logNodeFilter').value.trim();
+      const fromVal = document.getElementById('logTimeFrom').value;
+      const toVal   = document.getElementById('logTimeTo').value;
+      logTimeFrom = fromVal ? new Date(fromVal) : null;
+      logTimeTo   = toVal   ? new Date(toVal)   : null;
+      const data = selectedNode ? logs.filter(l => String(l.log_node) === String(selectedNode.node_id)) : logs;
+      renderLogTable(data);
+    }
+
+    function clearLogFilters() {
+      document.getElementById('logNodeFilter').value = '';
+      document.getElementById('logTimeFrom').value   = '';
+      document.getElementById('logTimeTo').value     = '';
+      logNodeSearch = '';
+      logTimeFrom   = null;
+      logTimeTo     = null;
+      const data = selectedNode ? logs.filter(l => String(l.log_node) === String(selectedNode.node_id)) : logs;
+      renderLogTable(data);
+    }
+
+    function filterLog(type, el) {
+      logFilter = type;
+      document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      const data = selectedNode ? logs.filter(l => String(l.log_node) === String(selectedNode.node_id)) : logs;
+      renderLogTable(data);
+    }
+
+    // ══════════════════════════════════════════════
+    //  CONNECTION STATUS  +  HEALTH CHECK
+    // ══════════════════════════════════════════════
+    function setConnStatus(ok, detail) {
+      const dot = document.getElementById('connDot');
+      const label = document.getElementById('connLabel');
+      dot.className = 'conn-dot ' + (ok ? 'ok' : 'err');
+      label.textContent = detail || (ok ? 'DB Connected' : 'DB Offline');
+    }
+
+    async function checkHealth() {
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        const data = await res.json();
+        const ok = data.status === 'ok';
+        const detail = ok
+          ? `DB ✓  MQTT ${data.mqtt}  TCP ${data.tcp}`
+          : `DB ${data.db}`;
+        setConnStatus(ok, detail);
+        return ok;
+      } catch (e) {
+        setConnStatus(false, 'Server unreachable');
+        return false;
+      }
+    }
+
+    // ══════════════════════════════════════════════
+    //  TOAST
+    // ══════════════════════════════════════════════
+    function showToast(type, msg, icon = 'info') {
+      const t = document.getElementById('toast');
+      t.className = `toast ${type}`;
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').textContent = icon;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    // ══════════════════════════════════════════════
+    //  POLLING & INIT
+    // ══════════════════════════════════════════════
+    async function loadNodes() {
+      nodes = await fetchNodes();
+      renderNodeList();
+      placeMarkers();
+    }
+
+    async function loadLogs() {
+      logs = await fetchLogs();
+      renderLogTable(logs);
+      renderNodeList(document.getElementById('nodeSearch').value);
+      placeMarkers();
+    }
+
+    async function refreshAll() {
+      showToast('info', 'Refreshing data...', 'sync');
+      await loadNodes();
+      await loadLogs();
+    }
+
+    function startPolling() {
+      pollTimer = setInterval(loadLogs, POLL_INTERVAL_MS);
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      initMap();
+      setConnStatus(false, 'Connecting...');
+
+      // Health check — verify DB + services before loading data
+      const healthy = await checkHealth();
+      if (!healthy) {
+        showToast('error', 'Server unreachable — showing demo data', 'cloud_off');
+      }
+
+      await loadNodes();
+      await loadLogs();
+      startPolling();
+
+      // Re-check health every 15 seconds
+      setInterval(checkHealth, 15000);
+    });
+
+    // ══════════════════════════════════════════════
+    //  DEMO DATA FALLBACK
+    //  (Remove after connecting real backend)
+    // ══════════════════════════════════════════════
+    function getDemoNodes() {
+      setConnStatus(false);
+      return [
+        { node_id: '11-03-1-2-01', node_name: 'ULN_BZD_22hor_HolbooniiSurguuli',        node_long: '106.966060', node_lat: '47.920654', panel_isc: 6.39, panel_voc: 22.92, panel_imp: 5.81, panel_vmp: 18.92, battery_voltage: 12, battery_current:  80, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-02', node_name: 'ULN_BZD_22hor_ZorigooBagshiinBair',      node_long: '106.967052', node_lat: '47.921006', panel_isc: 6.39, panel_voc: 22.92, panel_imp: 5.81, panel_vmp: 18.92, battery_voltage: 12, battery_current:  80, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-03', node_name: 'ULN_KHU_32hor_ZaisanDenj',               node_long: '106.904200', node_lat: '47.872100', panel_isc: 6.39, panel_voc: 22.92, panel_imp: 5.81, panel_vmp: 18.92, battery_voltage: 12, battery_current:  80, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-04', node_name: 'ULN_SGK_14hor_OrgiilKhoroolol',          node_long: '106.691500', node_lat: '47.931800', panel_isc: 6.39, panel_voc: 22.92, panel_imp: 5.81, panel_vmp: 18.92, battery_voltage: 12, battery_current: 100, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-05', node_name: 'ULN_BZR_20hor_NarantuulZakh',            node_long: '107.058300', node_lat: '47.919400', panel_isc: 7.12, panel_voc: 25.60, panel_imp: 6.58, panel_vmp: 21.40, battery_voltage: 12, battery_current:  80, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-06', node_name: 'ULN_CHG_5hor_GandanHiidiin_Oroon',       node_long: '106.908700', node_lat: '47.967600', panel_isc: 7.12, panel_voc: 25.60, panel_imp: 6.58, panel_vmp: 21.40, battery_voltage: 12, battery_current:  80, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-07', node_name: 'ULN_BYG_11hor_AmgalanTosghon',           node_long: '106.842400', node_lat: '47.893200', panel_isc: 6.39, panel_voc: 22.92, panel_imp: 5.81, panel_vmp: 18.92, battery_voltage: 12, battery_current:  80, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-08', node_name: 'ULN_NLH_1hor_NalaihTosghon',             node_long: '107.308500', node_lat: '47.762300', panel_isc: 7.12, panel_voc: 25.60, panel_imp: 6.58, panel_vmp: 21.40, battery_voltage: 12, battery_current: 120, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-09', node_name: 'ULN_BZR_26hor_GachuurtTosgon',           node_long: '107.181200', node_lat: '47.991400', panel_isc: 6.39, panel_voc: 22.92, panel_imp: 5.81, panel_vmp: 18.92, battery_voltage: 12, battery_current:  80, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-10', node_name: 'ULN_SGK_23hor_UuliinkhaanKhoroolol',     node_long: '106.741000', node_lat: '47.974800', panel_isc: 6.39, panel_voc: 22.92, panel_imp: 5.81, panel_vmp: 18.92, battery_voltage: 12, battery_current: 100, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-11', node_name: 'ULN_KHU_38hor_NisehBuudaliin_Oroon',     node_long: '106.767400', node_lat: '47.843100', panel_isc: 7.12, panel_voc: 25.60, panel_imp: 6.58, panel_vmp: 21.40, battery_voltage: 12, battery_current: 120, last_proto: null, last_seen: null },
+        { node_id: '11-03-1-2-12', node_name: 'ULN_BZR_29hor_DunjingaravTal',           node_long: '107.108600', node_lat: '47.950200', panel_isc: 7.12, panel_voc: 25.60, panel_imp: 6.58, panel_vmp: 21.40, battery_voltage: 12, battery_current:  80, last_proto: null, last_seen: null },
+      ];
+    }
+
+    function getDemoLogs() {
+      // Nodes 01,02,04,06 → ONLINE  |  03 → CLEANING  |  05 → ALERT  |  07-12 → OFFLINE (no entries)
+      const now = new Date();
+      const t = (m) => new Date(now - m * 60000).toISOString().slice(0, 19).replace('T', ' ');
+      return [
+        // ── Node 01 — ONLINE ──────────────────────────────────────────────
+        { log_id:  1, log_node: '11-03-1-2-01', log_sent_time: t(0),  log_inserted_time: t(0),  log_seq: 412, log_panel_voltage: '19.48', log_panel_current: '5.38', log_battery_voltage: '14.02', log_lux: 42800, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'MQTT'   },
+        { log_id:  2, log_node: '11-03-1-2-01', log_sent_time: t(5),  log_inserted_time: t(5),  log_seq: 411, log_panel_voltage: '19.45', log_panel_current: '5.36', log_battery_voltage: '14.00', log_lux: 41500, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'MQTT'   },
+        { log_id:  3, log_node: '11-03-1-2-01', log_sent_time: t(10), log_inserted_time: t(10), log_seq: 410, log_panel_voltage: '19.41', log_panel_current: '5.34', log_battery_voltage: '13.98', log_lux: 39200, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'TCP/IP' },
+
+        // ── Node 02 — ONLINE ──────────────────────────────────────────────
+        { log_id:  4, log_node: '11-03-1-2-02', log_sent_time: t(1),  log_inserted_time: t(1),  log_seq: 288, log_panel_voltage: '19.22', log_panel_current: '5.29', log_battery_voltage: '13.95', log_lux: 38600, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'MQTT'   },
+        { log_id:  5, log_node: '11-03-1-2-02', log_sent_time: t(6),  log_inserted_time: t(6),  log_seq: 287, log_panel_voltage: '19.18', log_panel_current: '5.27', log_battery_voltage: '13.92', log_lux: 37100, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'MQTT'   },
+
+        // ── Node 03 — CLEANING ────────────────────────────────────────────
+        { log_id:  6, log_node: '11-03-1-2-03', log_sent_time: t(0),  log_inserted_time: t(0),  log_seq: 174, log_panel_voltage: '18.85', log_panel_current: '5.15', log_battery_voltage: '13.88', log_lux: 52400, log_cleaning_stat: 1, log_cleaning_reason: 'Scheduled', log_con_type: 'MQTT'   },
+        { log_id:  7, log_node: '11-03-1-2-03', log_sent_time: t(2),  log_inserted_time: t(2),  log_seq: 173, log_panel_voltage: '18.82', log_panel_current: '5.13', log_battery_voltage: '13.87', log_lux: 51800, log_cleaning_stat: 1, log_cleaning_reason: 'Scheduled', log_con_type: 'TCP/IP' },
+
+        // ── Node 04 — ONLINE ──────────────────────────────────────────────
+        { log_id:  8, log_node: '11-03-1-2-04', log_sent_time: t(3),  log_inserted_time: t(3),  log_seq: 321, log_panel_voltage: '18.75', log_panel_current: '5.10', log_battery_voltage: '13.85', log_lux: 33900, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'MQTT'   },
+        { log_id:  9, log_node: '11-03-1-2-04', log_sent_time: t(8),  log_inserted_time: t(8),  log_seq: 320, log_panel_voltage: '18.72', log_panel_current: '5.08', log_battery_voltage: '13.83', log_lux: 32100, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'TCP/IP' },
+
+        // ── Node 05 — ALERT (low battery, snow suspected) ────────────────
+        { log_id: 10, log_node: '11-03-1-2-05', log_sent_time: t(2),  log_inserted_time: t(2),  log_seq:  95, log_panel_voltage: '0.08',  log_panel_current: '0.00', log_battery_voltage: '11.18', log_lux: 28700, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'MQTT'   },
+        { log_id: 11, log_node: '11-03-1-2-05', log_sent_time: t(7),  log_inserted_time: t(7),  log_seq:  94, log_panel_voltage: '0.07',  log_panel_current: '0.00', log_battery_voltage: '11.12', log_lux: 27900, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'MQTT'   },
+
+        // ── Node 06 — ONLINE ──────────────────────────────────────────────
+        { log_id: 12, log_node: '11-03-1-2-06', log_sent_time: t(4),  log_inserted_time: t(4),  log_seq: 203, log_panel_voltage: '21.35', log_panel_current: '6.42', log_battery_voltage: '14.08', log_lux: 61200, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'TCP/IP' },
+        { log_id: 13, log_node: '11-03-1-2-06', log_sent_time: t(9),  log_inserted_time: t(9),  log_seq: 202, log_panel_voltage: '21.30', log_panel_current: '6.40', log_battery_voltage: '14.06', log_lux: 60400, log_cleaning_stat: 0, log_cleaning_reason: '', log_con_type: 'MQTT'   },
+        // Nodes 07-12 have no entries → OFFLINE
+      ];
+    }
+
+    // ══════════════════════════════════════════════
+    //  SCHEDULE
+    // ══════════════════════════════════════════════
+    async function loadSchedule(nodeId) {
+      // Reset UI to loading state
+      ['schedTime0', 'schedTime1'].forEach(id => document.getElementById(id).value = '');
+      ['schedEna0', 'schedEna1'].forEach(id => { document.getElementById(id).checked = false; });
+      updateSchedSlotStyle(0, false);
+      updateSchedSlotStyle(1, false);
+
+      try {
+        const res = await fetch(`${API_BASE}/schedule/${nodeId}`);
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+
+        data.forEach(slot => {
+          const i = slot.slot;
+          document.getElementById(`schedTime${i}`).value = slot.time || '08:00';
+          document.getElementById(`schedEna${i}`).checked = !!slot.enabled;
+          updateSchedSlotStyle(i, !!slot.enabled);
+        });
+
+        setSchedStatus('info', 'Loaded from database');
+      } catch (e) {
+        setSchedStatus('error', 'Could not load schedule');
+      }
+    }
+
+    function onSchedToggle(slot) {
+      const enabled = document.getElementById(`schedEna${slot}`).checked;
+      updateSchedSlotStyle(slot, enabled);
+    }
+
+    function updateSchedSlotStyle(slot, enabled) {
+      const el = document.getElementById(`schedSlot${slot}`);
+      if (enabled) el.classList.add('enabled');
+      else el.classList.remove('enabled');
+    }
+
+    async function saveSchedule() {
+      if (!selectedNode) return;
+
+      const slots = [0, 1].map(i => ({
+        slot: i,
+        time: document.getElementById(`schedTime${i}`).value || '00:00',
+        enabled: document.getElementById(`schedEna${i}`).checked,
+      }));
+
+      // Basic validation
+      for (const s of slots) {
+        if (s.enabled && !/^\d{2}:\d{2}$/.test(s.time)) {
+          showToast('error', `Invalid time for slot ${s.slot + 1} — use HH:MM`, 'error');
+          return;
+        }
+      }
+
+      setSchedStatus('info', 'Sending to Arduino...');
+
+      try {
+        const res = await fetch(`${API_BASE}/schedule`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ node_id: selectedNode.node_id, slots }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Server error');
+
+        const delivery = data.delivery;
+        const ok = delivery?.ok;
+        const via = delivery?.proto || '?';
+
+        if (ok) {
+          setSchedStatus('success', `Sent via ${via} — saved to EEPROM`);
+          showToast('success', `Schedule sent to ${selectedNode.node_id} via ${via}`, 'check_circle');
+        } else {
+          setSchedStatus('error', `DB saved — delivery failed: ${delivery?.reason || '?'}`);
+          showToast('error', `Saved to DB but Arduino unreachable (${delivery?.reason})`, 'warning');
+        }
+
+        // Update local node's proto badge
+        if (data.schedule) {
+          data.schedule.forEach(s => {
+            document.getElementById(`schedEna${s.slot}`).checked = !!s.enabled;
+            updateSchedSlotStyle(s.slot, !!s.enabled);
+          });
+        }
+      } catch (e) {
+        setSchedStatus('error', e.message);
+        showToast('error', `Schedule error: ${e.message}`, 'error');
+      }
+    }
+
+    function setSchedStatus(type, msg) {
+      const el = document.getElementById('schedSaveStatus');
+      const icons = { info: 'info', success: 'check_circle', error: 'error', warn: 'warning' };
+      const colors = { info: 'var(--on-surface-variant)', success: 'var(--success)', error: 'var(--error)', warn: 'var(--warning)' };
+      el.style.color = colors[type] || colors.info;
+      el.innerHTML = `<span class="icon" style="font-size:13px;color:inherit">${icons[type] || 'info'}</span> ${msg}`;
+    }
+
+  </script>
+</body>
+
+</html>
