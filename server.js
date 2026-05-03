@@ -39,8 +39,6 @@ const db = mysql.createPool({
   timezone: "+00:00",
 });
 
-app.use(express.static('.'));
-
 // ── Logger ────────────────────────────────────────────────────
 const LOG_FILE = path.join(__dirname, "pv_server.log");
 function log(tag, msg) {
