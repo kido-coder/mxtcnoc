@@ -39,64 +39,64 @@ INSERT INTO node_info VALUES
 -- ════════════════════════════════════════════════════════════
 
 -- 03 · Khan-Uul district · Zaisan memorial hill area (~5 km south)
-INSERT INTO node_info VALUES
-('11-03-1-2-03', 'ULN_KHU_32hor_ZaisanDenj',
- '106.904200', '47.872100',
- 6.39, 22.92, 5.81, 18.92, 12, 80);
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-03', 'ULN_KHU_32hor_ZaisanDenj',
+--  '106.904200', '47.872100',
+--  6.39, 22.92, 5.81, 18.92, 12, 80);
 
--- 04 · Songinokhairkhan district · Orgil sub-centre (~10 km west)
-INSERT INTO node_info VALUES
-('11-03-1-2-04', 'ULN_SGK_14hor_OrgiilKhoroolol',
- '106.691500', '47.931800',
- 6.39, 22.92, 5.81, 18.92, 12, 100);
+-- -- 04 · Songinokhairkhan district · Orgil sub-centre (~10 km west)
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-04', 'ULN_SGK_14hor_OrgiilKhoroolol',
+--  '106.691500', '47.931800',
+--  6.39, 22.92, 5.81, 18.92, 12, 100);
 
--- 05 · Bayanzurkh district · Narantuul market corridor (~8 km east)
-INSERT INTO node_info VALUES
-('11-03-1-2-05', 'ULN_BZR_20hor_NarantuulZakh',
- '107.058300', '47.919400',
- 7.12, 25.60, 6.58, 21.40, 12, 80);
+-- -- 05 · Bayanzurkh district · Narantuul market corridor (~8 km east)
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-05', 'ULN_BZR_20hor_NarantuulZakh',
+--  '107.058300', '47.919400',
+--  7.12, 25.60, 6.58, 21.40, 12, 80);
 
--- 06 · Chingeltei district · Gandan monastery ridge (~7 km north)
-INSERT INTO node_info VALUES
-('11-03-1-2-06', 'ULN_CHG_5hor_GandanHiidiin_Oroon',
- '106.908700', '47.967600',
- 7.12, 25.60, 6.58, 21.40, 12, 80);
+-- -- 06 · Chingeltei district · Gandan monastery ridge (~7 km north)
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-06', 'ULN_CHG_5hor_GandanHiidiin_Oroon',
+--  '106.908700', '47.967600',
+--  7.12, 25.60, 6.58, 21.40, 12, 80);
 
--- 07 · Bayangol district · Amgalan residential (~4 km south-west)
-INSERT INTO node_info VALUES
-('11-03-1-2-07', 'ULN_BYG_11hor_AmgalanTosghon',
- '106.842400', '47.893200',
- 6.39, 22.92, 5.81, 18.92, 12, 80);
+-- -- 07 · Bayangol district · Amgalan residential (~4 km south-west)
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-07', 'ULN_BYG_11hor_AmgalanTosghon',
+--  '106.842400', '47.893200',
+--  6.39, 22.92, 5.81, 18.92, 12, 80);
 
--- 08 · Nalaikh district · Nalaikh town centre (~28 km south-east)
-INSERT INTO node_info VALUES
-('11-03-1-2-08', 'ULN_NLH_1hor_NalaihTosghon',
- '107.308500', '47.762300',
- 7.12, 25.60, 6.58, 21.40, 12, 120);
+-- -- 08 · Nalaikh district · Nalaikh town centre (~28 km south-east)
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-08', 'ULN_NLH_1hor_NalaihTosghon',
+--  '107.308500', '47.762300',
+--  7.12, 25.60, 6.58, 21.40, 12, 120);
 
--- 09 · Bayanzurkh district · Gachuurt village (~18 km north-east)
-INSERT INTO node_info VALUES
-('11-03-1-2-09', 'ULN_BZR_26hor_GachuurtTosgon',
- '107.181200', '47.991400',
- 6.39, 22.92, 5.81, 18.92, 12, 80);
+-- -- 09 · Bayanzurkh district · Gachuurt village (~18 km north-east)
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-09', 'ULN_BZR_26hor_GachuurtTosgon',
+--  '107.181200', '47.991400',
+--  6.39, 22.92, 5.81, 18.92, 12, 80);
 
--- 10 · Songinokhairkhan district · Üüliinkhan north (~12 km north-west)
-INSERT INTO node_info VALUES
-('11-03-1-2-10', 'ULN_SGK_23hor_UuliinkhaanKhoroolol',
- '106.741000', '47.974800',
- 6.39, 22.92, 5.81, 18.92, 12, 100);
+-- -- 10 · Songinokhairkhan district · Üüliinkhan north (~12 km north-west)
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-10', 'ULN_SGK_23hor_UuliinkhaanKhoroolol',
+--  '106.741000', '47.974800',
+--  6.39, 22.92, 5.81, 18.92, 12, 100);
 
--- 11 · Khan-Uul district · Near Chinggis Khaan International Airport (~10 km west-south)
-INSERT INTO node_info VALUES
-('11-03-1-2-11', 'ULN_KHU_38hor_NisehBuudaliin_Oroon',
- '106.767400', '47.843100',
- 7.12, 25.60, 6.58, 21.40, 12, 120);
+-- -- 11 · Khan-Uul district · Near Chinggis Khaan International Airport (~10 km west-south)
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-11', 'ULN_KHU_38hor_NisehBuudaliin_Oroon',
+--  '106.767400', '47.843100',
+--  7.12, 25.60, 6.58, 21.40, 12, 120);
 
--- 12 · Bayanzurkh district · Dunjingarav / eastern plateau (~13 km north-east)
-INSERT INTO node_info VALUES
-('11-03-1-2-12', 'ULN_BZR_29hor_DunjingaravTal',
- '107.108600', '47.950200',
- 7.12, 25.60, 6.58, 21.40, 12, 80);
+-- -- 12 · Bayanzurkh district · Dunjingarav / eastern plateau (~13 km north-east)
+-- INSERT INTO node_info VALUES
+-- ('11-03-1-2-12', 'ULN_BZR_29hor_DunjingaravTal',
+--  '107.108600', '47.950200',
+--  7.12, 25.60, 6.58, 21.40, 12, 80);
 CREATE TABLE working_log (
 	log_id		INT		 			auto_increment,
     log_node	INT						,
@@ -116,7 +116,7 @@ CREATE TABLE working_log (
 CREATE TABLE cmd_log (
 	cmd_id		INT		 			auto_increment,
     cmd_sent	DATETIME,
-    cmd_node	int,
+    cmd_node	VARCHAR(12),
     cmd_text	VARCHAR(100)	DEFAULT NULL,
 
     PRIMARY KEY (cmd_id));
